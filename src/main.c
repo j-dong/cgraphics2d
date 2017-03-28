@@ -28,6 +28,12 @@ static const struct tex_opt_t {
     bool srgb;
     bool mipmaps; // ignored unless ENABLE_MIPMAPS is defined
 } texture_options[TEX_COUNT] = {
+    {
+        "test.png",
+        128, 128,
+        true,
+        false,
+    },
 };
 
 int main(void) {
@@ -59,10 +65,10 @@ int main(void) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        unsigned char *data;
+        unsigned char *data = NULL;
         unsigned int width, height;
         unsigned int error;
-        if (!(error = lodepng_decode32_file(&data, &width, &height, texture_options[i].filename))) {
+        if ((error = lodepng_decode32_file(&data, &width, &height, texture_options[i].filename))) {
             free(data);
             // close immediately
             glfwSetWindowShouldClose(window, true);
