@@ -50,7 +50,7 @@ static const struct tex_opt_t {
     // replace with hi-res images
     unsigned int width, height;
     bool srgb;
-    bool premultiplied; // if not, we manually premultiply
+    bool premultiplied; // if not, we manually premultiply; set to true if opaque
     bool mipmaps; // ignored unless ENABLE_MIPMAPS is defined
 } texture_options[TEX_COUNT] = {
     {
@@ -133,6 +133,8 @@ int main(void) {
     }
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_FRAMEBUFFER_SRGB);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glfwSwapInterval(1); // turn on vsync
     // bind VAO (we basically only need one VBO)
     GLuint vao;
