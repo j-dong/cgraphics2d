@@ -27,6 +27,23 @@ enum vx_attributes {
     VXI_TEX_POS  = 2,
 };
 
+enum uniforms {
+    U_TEX = 0,
+    U_WIN_SIZE = 1,
+    U_DRAW_SIZE = 2,
+    U_CENTER_POS = 3,
+    U_TEX_SIZE = 4,
+    UNIFORM_COUNT
+};
+
+const char *uniform_name[UNIFORM_COUNT] = {
+    "tex",
+    "win_size",
+    "draw_size",
+    "center_pos",
+    "tex_size",
+};
+
 static const struct tex_opt_t {
     const char *filename;
     // used for image coordinates; convenient and allows user to
@@ -67,22 +84,22 @@ GLuint gen_shader(GLenum shader_type, const char *source) {
 const char \
       *v_shader_src = \
     "#version 330\n"
-    "in vec2 position;\n"
+    "layout(location = 0) in vec2 position;\n"
     "out vec2 o_pos;\n"
     "uniform ivec2 win_size;\n"
     "uniform ivec2 draw_size;\n"
     "uniform ivec2 center_pos;\n"
     "uniform vec2 tex_size;\n"
-    "in ivec2 draw_pos;\n"
-    "in vec2 tex_pos;\n"
+    "layout(location = 1) in ivec2 draw_pos;\n"
+    "layout(location = 2) in vec2 tex_pos;\n"
     "void main() {\n"
     "    o_pos = vec2(0.0, 1.0) + vec2(1.0, -1.0) * (tex_pos + position * tex_size);\n"
     "    vec2 pos = (vec2(draw_pos - center_pos) + vec2(draw_size) * position) * vec2(2.0, -2.0) / vec2(win_size);\n"
     "    gl_Position = vec4(pos, 0.0, 1.0);\n"
     "}\n"
     , *f_shader_src = \
-    "#version 130\n"
-    "out vec4 color;\n"
+    "#version 330\n"
+    "layout(location = 0) out vec4 color;\n"
     "in vec2 o_pos;\n"
     "uniform sampler2D tex;\n"
     "void main() {\n"
@@ -164,6 +181,7 @@ int main(void) {
         1.0f, 1.0f,
     };
     // 4 int/floats per map value
+    const unsigned int instance_count = sizeof map / sizeof map[0][0];
     GLint instances[4 * sizeof map / sizeof map[0][0]];
     for (unsigned int y = 0; y < sizeof map / sizeof map[0]; y++) {
         for (unsigned int x = 0; x < sizeof map[0] / sizeof map[0][0]; x++) {
@@ -227,11 +245,26 @@ int main(void) {
     glDetachShader(shader_program, f_shader);
     glDeleteShader(v_shader);
     glDeleteShader(f_shader);
+    // uniform locations
+    GLint ul[UNIFORM_COUNT];
+    for (int i = 0; i < UNIFORM_COUNT; i++)
+        ul[i] = glGetUniformLocation(shader_program, uniform_name[i]);
+    // use program, set uniforms
+    glUseProgram(shader_program);
+    glUniform1i(ul[U_TEX], 0); // texture unit 0
+    // if resizing desired, set this in main loop or resize handler
+    glUniform2i(ul[U_WIN_SIZE], WIDTH, HEIGHT);
     // main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        // set uniforms for drawing
+        glUniform2i(ul[U_DRAW_SIZE], tile_width, tile_height);
+        glUniform2i(ul[U_CENTER_POS], 0, 0);
+        glUniform2f(ul[U_TEX_SIZE], 1.0f / tex_cols, 1.0f / tex_rows);
+        // draw using bound arrays
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, instance_count);
         glfwSwapBuffers(window);
     }
     // cleanup
@@ -249,5 +282,5 @@ vao_error:
 pre_init_error:
     glfwSetWindowShouldClose(window, 1);
     glfwTerminate();
-    return EXIT_SUCCESS;
+    return exit_code;
 }
