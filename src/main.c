@@ -20,10 +20,11 @@ enum texture_t {
 
 typedef enum texture_t Texture;
 
+// values specified in shader
 enum vx_attributes {
-    VX_POSITION,
-    VXI_DRAW_POS,
-    VXI_TEX_POS,
+    VX_POSITION  = 0,
+    VXI_DRAW_POS = 1,
+    VXI_TEX_POS  = 2,
 };
 
 static const struct tex_opt_t {
@@ -42,7 +43,57 @@ static const struct tex_opt_t {
     },
 };
 
+GLuint gen_shader(GLenum shader_type, const char *source) {
+    GLuint shader = glCreateShader(shader_type);
+    if (!shader) return 0;
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+    GLint success = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE) {
+        GLint il_length = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &il_length);
+        char *log = (char *)malloc(il_length);
+        glGetShaderInfoLog(shader, il_length, &il_length, log);
+        fputs(log, stderr);
+        putc('\n', stderr);
+        free(log);
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
+}
+
+const char \
+      *v_shader_src = \
+    "#version 330\n"
+    "in vec2 position;\n"
+    "out vec2 o_pos;\n"
+    "uniform ivec2 win_size;\n"
+    "uniform ivec2 draw_size;\n"
+    "uniform ivec2 center_pos;\n"
+    "uniform vec2 tex_size;\n"
+    "in ivec2 draw_pos;\n"
+    "in vec2 tex_pos;\n"
+    "void main() {\n"
+    "    o_pos = vec2(0.0, 1.0) + vec2(1.0, -1.0) * (tex_pos + position * tex_size);\n"
+    "    vec2 pos = (vec2(draw_pos - center_pos) + vec2(draw_size) * position) * vec2(2.0, -2.0) / vec2(win_size);\n"
+    "    gl_Position = vec4(pos, 0.0, 1.0);\n"
+    "}\n"
+    , *f_shader_src = \
+    "#version 130\n"
+    "out vec4 color;\n"
+    "in vec2 o_pos;\n"
+    "uniform sampler2D tex;\n"
+    "void main() {\n"
+    "    color = texture(tex, o_pos);\n"
+    "}\n"
+    ;
+
+// TODO: error handling
+
 int main(void) {
+    int exit_code = EXIT_SUCCESS;
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -52,13 +103,13 @@ int main(void) {
     glfwMakeContextCurrent(window);
     if (!window) {
         fputs("error creating GLFW window\n", stderr);
-        glfwTerminate();
-        return EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
+        goto pre_init_error;
     }
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         fputs("error loading OpenGL\n", stderr);
-        glfwTerminate();
-        return EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
+        goto pre_init_error;
     }
     glViewport(0, 0, WIDTH, HEIGHT);
     glfwSwapInterval(1); // turn on vsync
@@ -81,10 +132,11 @@ int main(void) {
         unsigned int error;
         if ((error = lodepng_decode32_file(&data, &width, &height, texture_options[i].filename))) {
             free(data);
+            data = NULL;
             // close immediately
-            glfwSetWindowShouldClose(window, true);
             fprintf(stderr, "error loading %s: %s\n", texture_options[i].filename, lodepng_error_text(error));
-            break;
+            exit_code = EXIT_FAILURE;
+            goto pre_init_error;
         }
         glTexImage2D(GL_TEXTURE_2D, 0, texture_options[i].srgb ? GL_SRGB_ALPHA : GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         free(data);
@@ -144,6 +196,37 @@ int main(void) {
     glEnableVertexAttribArray(VXI_TEX_POS);
     // unbind if wanted
     // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // create and bind shaders
+    GLuint v_shader = gen_shader(GL_VERTEX_SHADER,   v_shader_src);
+    GLuint f_shader = gen_shader(GL_FRAGMENT_SHADER, f_shader_src);
+    if (v_shader == 0 || f_shader == 0) {
+        glDeleteShader(v_shader);
+        glDeleteShader(f_shader);
+        v_shader = f_shader = 0;
+        exit_code = EXIT_FAILURE;
+        goto shader_error;
+    }
+    GLuint shader_program = glCreateProgram();
+    glAttachShader(shader_program, v_shader);
+    glAttachShader(shader_program, f_shader);
+    glLinkProgram(shader_program);
+    GLint success = 0;
+    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE) {
+        GLint il_length = 0;
+        glGetProgramiv(shader_program, GL_INFO_LOG_LENGTH, &il_length);
+        char *log = (char *)malloc(il_length);
+        glGetProgramInfoLog(shader_program, il_length, &il_length, log);
+        fputs(log, stderr);
+        putc('\n', stderr);
+        free(log);
+        exit_code = EXIT_FAILURE;
+        goto shader_program_error;
+    }
+    glDetachShader(shader_program, v_shader);
+    glDetachShader(shader_program, f_shader);
+    glDeleteShader(v_shader);
+    glDeleteShader(f_shader);
     // main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -152,10 +235,19 @@ int main(void) {
         glfwSwapBuffers(window);
     }
     // cleanup
+post_init_error:
+shader_program_error:
+    glDeleteProgram(shader_program);
+shader_error:
+vbo_error:
     glDeleteBuffers(1, &vbo_inst);
     glDeleteBuffers(1, &vbo);
+texture_error:
     glDeleteTextures(TEX_COUNT, textures);
+vao_error:
     glDeleteVertexArrays(1, &vao);
+pre_init_error:
+    glfwSetWindowShouldClose(window, 1);
     glfwTerminate();
     return EXIT_SUCCESS;
 }
