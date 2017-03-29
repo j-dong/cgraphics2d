@@ -118,6 +118,7 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
     GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "Graphics", NULL, NULL);
     glfwMakeContextCurrent(window);
     if (!window) {
@@ -131,6 +132,7 @@ int main(void) {
         goto pre_init_error;
     }
     glViewport(0, 0, WIDTH, HEIGHT);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     glfwSwapInterval(1); // turn on vsync
     // bind VAO (we basically only need one VBO)
     GLuint vao;
