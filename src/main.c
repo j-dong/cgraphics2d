@@ -20,6 +20,12 @@ enum texture_t {
 
 typedef enum texture_t Texture;
 
+enum vx_attributes {
+    VX_POSITION,
+    VXI_DRAW_POS,
+    VXI_TEX_POS,
+};
+
 static const struct tex_opt_t {
     const char *filename;
     // used for image coordinates; convenient and allows user to
@@ -55,6 +61,11 @@ int main(void) {
         return EXIT_FAILURE;
     }
     glViewport(0, 0, WIDTH, HEIGHT);
+    glfwSwapInterval(1); // turn on vsync
+    // bind VAO (we basically only need one VBO)
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
     // load resources
     GLuint textures[TEX_COUNT] = {0};
     glGenTextures(TEX_COUNT, textures);
@@ -82,6 +93,57 @@ int main(void) {
             glGenerateMipmap(GL_TEXTURE_2D);
 #endif
     }
+    // unbind if wanted
+    // glBindTexture(GL_TEXTURE_2D, 0);
+    // rendered objects
+    const unsigned int tex_rows = 2, tex_cols = 2;
+    const unsigned int tile_width = 64, tile_height = 64;
+    const unsigned int map[4][4] = {
+        {0, 1, 2, 3},
+        {2, 2, 2, 2},
+        {1, 3, 1, 1},
+        {2, 2, 0, 2},
+    };
+    // set up buffer data
+    const GLfloat vertices[] = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+    };
+    // 4 int/floats per map value
+    GLint instances[4 * sizeof map / sizeof map[0][0]];
+    for (unsigned int y = 0; y < sizeof map / sizeof map[0]; y++) {
+        for (unsigned int x = 0; x < sizeof map[0] / sizeof map[0][0]; x++) {
+            unsigned int val = map[y][x];
+            unsigned int tx = val % tex_rows, ty = val / tex_rows;
+            unsigned int i = 4 * (x + y * sizeof map[0] / sizeof map[0][0]);
+            instances[i + 0] = x * tile_width;
+            instances[i + 1] = y * tile_height;
+            ((GLfloat *)instances)[i + 2] = tx / (GLfloat) tex_cols;
+            ((GLfloat *)instances)[i + 3] = ty / (GLfloat) tex_rows;
+        }
+    }
+    // allocate and register buffers
+    GLuint vbo; // stores vertices of quad
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(VX_POSITION, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(VX_POSITION);
+    GLuint vbo_inst; // stores instance attributes
+    glGenBuffers(1, &vbo_inst);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_inst);
+    glBufferData(GL_ARRAY_BUFFER, sizeof instances, instances, GL_STATIC_DRAW);
+    glVertexAttribIPointer(VXI_DRAW_POS, 2, GL_INT,             4 * sizeof(GLint), (void *)0);
+    glVertexAttribPointer (VXI_TEX_POS,  2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLint), (void *)(2 * sizeof(GLint)));
+    // per-instance attribute
+    glVertexAttribDivisor(VXI_DRAW_POS, 1);
+    glVertexAttribDivisor(VXI_TEX_POS,  1);
+    glEnableVertexAttribArray(VXI_DRAW_POS);
+    glEnableVertexAttribArray(VXI_TEX_POS);
+    // unbind if wanted
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);
     // main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -90,7 +152,10 @@ int main(void) {
         glfwSwapBuffers(window);
     }
     // cleanup
+    glDeleteBuffers(1, &vbo_inst);
+    glDeleteBuffers(1, &vbo);
     glDeleteTextures(TEX_COUNT, textures);
+    glDeleteVertexArrays(1, &vao);
     glfwTerminate();
     return EXIT_SUCCESS;
 }
