@@ -50,11 +50,13 @@ static const struct tex_opt_t {
     // replace with hi-res images
     unsigned int width, height;
     bool srgb;
+    bool premultiplied; // if not, we manually premultiply
     bool mipmaps; // ignored unless ENABLE_MIPMAPS is defined
 } texture_options[TEX_COUNT] = {
     {
         "test.png",
         128, 128,
+        true,
         true,
         false,
     },
@@ -93,7 +95,7 @@ const char \
     "layout(location = 1) in ivec2 draw_pos;\n"
     "layout(location = 2) in vec2 tex_pos;\n"
     "void main() {\n"
-    "    o_pos = vec2(0.0, 1.0) + vec2(1.0, -1.0) * (tex_pos + position * tex_size);\n"
+    "    o_pos = tex_pos + position * tex_size;\n"
     "    vec2 pos = (vec2(draw_pos - center_pos) + vec2(draw_size) * position) * vec2(2.0, -2.0) / vec2(win_size);\n"
     "    gl_Position = vec4(pos, 0.0, 1.0);\n"
     "}\n"
@@ -154,6 +156,17 @@ int main(void) {
             fprintf(stderr, "error loading %s: %s\n", texture_options[i].filename, lodepng_error_text(error));
             exit_code = EXIT_FAILURE;
             goto pre_init_error;
+        }
+        // premultiply if needed
+        if (!texture_options[i].premultiplied) {
+            size_t i = 4 * (width * height - 1);
+            for (;; i -= 4) {
+                unsigned short alpha = (unsigned short)data[i + 3] + 1;
+                data[i + 0] = (unsigned char)((alpha * data[i + 0]) / 256);
+                data[i + 1] = (unsigned char)((alpha * data[i + 1]) / 256);
+                data[i + 2] = (unsigned char)((alpha * data[i + 2]) / 256);
+                if (i == 0) break;
+            }
         }
         glTexImage2D(GL_TEXTURE_2D, 0, texture_options[i].srgb ? GL_SRGB_ALPHA : GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         free(data);
