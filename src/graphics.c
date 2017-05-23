@@ -1,23 +1,75 @@
 #include "graphics.h"
 
-const GLuint WIDTH = 400, HEIGHT = 300;
-
-enum texture_t {
-    TEX_TEST,
-    TEX_COUNT
+// values specified in shader
+enum vx_attributes {
+    VX_POSITION  = 0,
+    VXI_DRAW_POS = 1,
+    VXI_TEX_POS  = 2,
 };
 
-typedef enum texture_t Texture;
-
-static const TextureOptions texture_options[TEX_COUNT] = {
-    {
-        "test.png",
-        128, 128,
-        true,
-        true,
-        false,
-    },
+enum uniforms {
+    U_TEX = 0,
+    U_WIN_SIZE = 1,
+    U_DRAW_SIZE = 2,
+    U_CENTER_POS = 3,
+    U_TEX_SIZE = 4,
+    UNIFORM_COUNT
 };
+
+const char *uniform_name[UNIFORM_COUNT] = {
+    "tex",
+    "win_size",
+    "draw_size",
+    "center_pos",
+    "tex_size",
+};
+
+static GLuint gen_shader(GLenum shader_type, const char *source) {
+    GLuint shader = glCreateShader(shader_type);
+    if (!shader) return 0;
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+    GLint success = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE) {
+        GLint il_length = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &il_length);
+        char *log = (char *)malloc(il_length);
+        glGetShaderInfoLog(shader, il_length, &il_length, log);
+        fputs(log, stderr);
+        putc('\n', stderr);
+        free(log);
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
+}
+
+static const char \
+      *v_shader_src = \
+    "#version 330\n"
+    "layout(location = 0) in vec2 position;\n"
+    "out vec2 o_pos;\n"
+    "uniform ivec2 win_size;\n"
+    "uniform ivec2 draw_size;\n"
+    "uniform ivec2 center_pos;\n"
+    "uniform vec2 tex_size;\n"
+    "layout(location = 1) in ivec2 draw_pos;\n"
+    "layout(location = 2) in vec2 tex_pos;\n"
+    "void main() {\n"
+    "    o_pos = tex_pos + position * tex_size;\n"
+    "    vec2 pos = (vec2(draw_pos - center_pos) + vec2(draw_size) * position) * vec2(2.0, -2.0) / vec2(win_size);\n"
+    "    gl_Position = vec4(pos, 0.0, 1.0);\n"
+    "}\n"
+    , *f_shader_src = \
+    "#version 330\n"
+    "layout(location = 0) out vec4 color;\n"
+    "in vec2 o_pos;\n"
+    "uniform sampler2D tex;\n"
+    "void main() {\n"
+    "    color = texture(tex, o_pos);\n"
+    "}\n"
+    ;
 
 // TODO: error handling
 
