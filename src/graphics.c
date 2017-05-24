@@ -78,7 +78,7 @@ static const GLfloat graphics_vertices[] = {
     1.0f, 1.0f,
 };
 
-GraphicsError graphics_init(unsigned int width, unsigned int height, const char *title, GraphicsWindow *out) {
+GraphicsError graphics_init(unsigned int width, unsigned int height, const char *title, size_t maximum_draw_length, GraphicsWindow *out) {
     if (!glfwInit()) {
         return "error initializing GLFW";
     }
@@ -91,7 +91,7 @@ GraphicsError graphics_init(unsigned int width, unsigned int height, const char 
         graphics_destroy_window(*out);
         return "error loading OpenGL\n";
     }
-    err = graphics_init_window(*out);
+    err = graphics_init_window(*out, maximum_draw_length);
     if (err) return err;
     return 0;
 }
@@ -144,7 +144,7 @@ GraphicsError graphics_init_window(GraphicsWindow w, size_t maximum_draw_length)
     }
     glGenBuffers(1, &vbo_inst);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_inst);
-    glBufferData(GL_ARRAY_BUFFER, maximum_draw_length * 4 * sizeof(GLint), instances, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, maximum_draw_length * 4 * sizeof(GLint), 0, GL_STATIC_DRAW);
     glVertexAttribIPointer(VXI_DRAW_POS, 2, GL_INT,             4 * sizeof(GLint), (void *)0);
     glVertexAttribPointer (VXI_TEX_POS,  2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLint), (void *)(2 * sizeof(GLint)));
     // per-instance attribute
@@ -218,7 +218,7 @@ GraphicsError graphics_init_window(GraphicsWindow w, size_t maximum_draw_length)
 
 GraphicsError graphics_load_textures(const TextureOptions *tex_opts, size_t tex_count, GraphicsTexture *textures) {
     glGenTextures(tex_count, textures);
-    for (int i = 0; i < tex_count; i++) {
+    for (unsigned int i = 0; i < tex_count; i++) {
         glBindTexture(GL_TEXTURE_2D, textures[i]);
         // texture parameters (wrapping, filtering)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -233,8 +233,8 @@ GraphicsError graphics_load_textures(const TextureOptions *tex_opts, size_t tex_
             data = NULL;
             // close immediately
             fprintf(stderr, "error loading %s: %s\n", tex_opts[i].filename, lodepng_error_text(error));
-            exit_code = EXIT_FAILURE;
-            goto pre_init_error;
+            glDeleteTextures(tex_count, textures);
+            return "error loading textures";
         }
         // premultiply if needed
         if (!tex_opts[i].premultiplied) {
@@ -254,6 +254,7 @@ GraphicsError graphics_load_textures(const TextureOptions *tex_opts, size_t tex_
             glGenerateMipmap(GL_TEXTURE_2D);
 #endif
     }
+    return 0;
 }
 
 void graphics_destroy_window(GraphicsWindow w) {
@@ -271,5 +272,17 @@ void graphics_draw(GraphicsWindow w, GLint *buffer, size_t length, unsigned int 
     glUniform2i(ul[U_CENTER_POS], center_x, center_y);
     glUniform2f(ul[U_TEX_SIZE], tex_width, tex_height);
     // draw using bound arrays
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, instance_count);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, length);
 }
+
+#ifndef __cplusplus
+// definitions of inline functions
+GraphicsError graphics_get_window_error(GraphicsWindow w);
+void graphics_activate_window(GraphicsWindow w);
+GLFWwindow *graphics_get_glfw_window_(GraphicsWindow w);
+void graphics_poll_events(void);
+int graphics_window_closed(GraphicsWindow w);
+void graphics_clear(void);
+void graphics_end_draw(GraphicsWindow w);
+void graphics_bind_texture(GraphicsTexture tex);
+#endif

@@ -49,7 +49,7 @@ inline GLFWwindow *graphics_get_glfw_window_(GraphicsWindow w) { return w; }
 
 // Initialize the graphics library and create a main window, activating and initializing it.
 GraphicsError graphics_init(unsigned int width, unsigned int height,
-                            const char *title, GraphicsWindow *out);
+                            const char *title, size_t maximum_draw_length, GraphicsWindow *out);
 // Terminate the graphics library.
 // Should be called if graphics_init completed successfully.
 void graphics_terminate(void);
@@ -76,7 +76,7 @@ inline void graphics_clear(void) { glClear(GL_COLOR_BUFFER_BIT); }
 // Draw some instances.
 void graphics_draw(GraphicsWindow w, GLint *buffer, size_t length, unsigned int draw_width, unsigned int draw_height, int center_x, int center_y, float tex_width, float tex_height);
 // Swap buffers
-void graphics_end_draw(GraphicsWindow w) { glfwSwapBuffers(graphics_get_glfw_window_(w)); }
+inline void graphics_end_draw(GraphicsWindow w) { glfwSwapBuffers(graphics_get_glfw_window_(w)); }
 
 typedef GLuint GraphicsTexture;
 

@@ -22,23 +22,6 @@ static const TextureOptions texture_options[TEX_COUNT] = {
 // TODO: callbacks (resize and error)
 
 int main(void) {
-    GraphicsError err;
-    GraphicsWindow window;
-    err = graphics_init(WIDTH, HEIGHT, "Graphics", &window);
-    if (err) {
-        fputs(err, stderr);
-        fputc('\n', stderr);
-        return EXIT_FAILURE;
-    }
-    GraphicsTexture textures[TEX_COUNT];
-    err = graphics_load_textures(texture_options, TEX_COUNT, textures);
-    if (err) {
-        fputs(err, stderr);
-        fputc('\n', stderr);
-        graphics_destroy_window(window);
-        graphics_terminate();
-        return EXIT_FAILURE;
-    }
     // rendered objects
     const unsigned int tex_rows = 2, tex_cols = 2;
     const unsigned int tile_width = 64, tile_height = 64;
@@ -61,6 +44,23 @@ int main(void) {
             ((GLfloat *)instances)[i + 2] = tx / (GLfloat) tex_cols;
             ((GLfloat *)instances)[i + 3] = ty / (GLfloat) tex_rows;
         }
+    }
+    GraphicsError err;
+    GraphicsWindow window;
+    err = graphics_init(WIDTH, HEIGHT, "Graphics", instance_count, &window);
+    if (err) {
+        fputs(err, stderr);
+        fputc('\n', stderr);
+        return EXIT_FAILURE;
+    }
+    GraphicsTexture textures[TEX_COUNT];
+    err = graphics_load_textures(texture_options, TEX_COUNT, textures);
+    if (err) {
+        fputs(err, stderr);
+        fputc('\n', stderr);
+        graphics_destroy_window(window);
+        graphics_terminate();
+        return EXIT_FAILURE;
     }
     // main loop
     while (!graphics_window_closed(window)) {
