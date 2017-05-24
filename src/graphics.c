@@ -137,12 +137,12 @@ GraphicsError graphics_init_window(GraphicsWindow w, size_t maximum_draw_length)
     glVertexAttribPointer(VX_POSITION, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(VX_POSITION);
     GLuint vbo_inst; // stores instance attributes
+    glGenBuffers(1, &vbo_inst);
     if (vbo_inst == 0) {
         glDeleteBuffers(1, &vbo);
         glDeleteVertexArrays(1, &vao);
         return "error creating per-instance VBO";
     }
-    glGenBuffers(1, &vbo_inst);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_inst);
     glBufferData(GL_ARRAY_BUFFER, maximum_draw_length * 4 * sizeof(GLint), 0, GL_STATIC_DRAW);
     glVertexAttribIPointer(VXI_DRAW_POS, 2, GL_INT,             4 * sizeof(GLint), (void *)0);
