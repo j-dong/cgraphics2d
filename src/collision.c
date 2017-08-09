@@ -69,8 +69,13 @@ static inline bool quadtree_should_subdivide(Quadtree *q) {
 
 // doesn't ever subdivide
 static void quadtree_insert_trivial(Quadtree *q, void *el, size_t el_size) {
+    if (q->data_cap == 0) {
+        q->data_cap = 1;
+        q->data = malloc(q->data_cap * el_size);
+    }
     if (q->data_len == q->data_cap) {
-        q->data = realloc(q->data, q->data_cap * 2);
+        q->data_cap *= 2;
+        q->data = realloc(q->data, q->data_cap * el_size);
     }
     memcpy(q->data + q->data_len * el_size, el, el_size);
     q->data_len++;
@@ -127,13 +132,41 @@ void quadtree_insert(Quadtree *q, void *el, size_t el_size) {
     }
 }
 
+// all children must not have children
+static void quadtree_unsubdivide(Quadtree *q, size_t el_size) {
+    size_t new_len = q->data_len;
+    for (int i = 0; i < 4; i++) new_len += q->child[i]->data_len;
+    if (q->data_cap == 0) q->data_cap = 1;
+    // if removing element from node with all zero-element children
+    // while number of elements is one more than a power of two
+    if (q->data_cap / 2 >= new_len) q->data_cap /= 2;
+    // not really necessary, but I like having powers of two
+    while (q->data_cap < new_len) {
+        q->data_cap *= 2;
+    }
+    // possibility that we just reduced data_cap to 0
+    if (q->data_cap)
+        q->data = realloc(q->data, q->data_cap * el_size);
+    else
+        q->data = NULL;
+    // copy elements from children and delete
+    for (int i = 0; i < 4; i++) {
+        if (q->child[i]->data_len) {
+            memcpy(q->data + q->data_len * el_size, q->child[i]->data, q->child[i]->data_len * el_size);
+            q->data_len += q->child[i]->data_len;
+        }
+        quadtree_delete(q->child[i]);
+    }
+}
+
 // remove element from leaf node or internal node where it doesn't fit into children
 static void quadtree_move_impl_trivial(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, void *buf) {
     size_t i = 0;
     bool found = false;
     for (; i < q->data_len; i++) {
         if (equal(el, q->data + i * el_size)) {
-            memcpy(buf, q->data + i * el_size, el_size);
+            if (buf)
+                memcpy(buf, q->data + i * el_size, el_size);
             q->data_len--;
             found = true;
             break;
@@ -146,6 +179,8 @@ static void quadtree_move_impl_trivial(Quadtree *q, void *el, size_t el_size, qt
 }
 
 // returns true if element was inserted into its new position
+// OR if we're just removing AND current node has children, so
+// no need to prune further
 static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds, void *buf) {
     // walk through tree to find where it should be inserted
     // pretty similar to insert
@@ -153,8 +188,18 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
     if (q->child[0] == NULL) {
         // unsubdivided
         quadtree_move_impl_trivial(q, el, el_size, equal, buf);
-        memcpy(buf, new_bounds, sizeof(AABB));
+        if (new_bounds)
+            memcpy(buf, new_bounds, sizeof(AABB));
         // since we don't have any children, we can't recurse
+        // no children, so can't unsubdivide
+        // check if we can reduce capacity
+        if (q->data_cap / 2 >= q->data_len) {
+            q->data_cap /= 2;
+            if (q->data_cap)
+                q->data = realloc(q->data, q->data_cap);
+            else
+                q->data = NULL;
+        }
         return false;
     } else {
         bool found = false;
@@ -163,22 +208,46 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
                 found = true;
                 if (quadtree_move_impl(q->child[i], el, el_size, equal, new_bounds, buf))
                     return true;
+                break; // no point in exploring other children
             }
         }
         if (!found) {
             // it's stored in here as a "leaf"
             quadtree_move_impl_trivial(q, el, el_size, equal, buf);
-            memcpy(buf, new_bounds, sizeof(AABB));
+            if (new_bounds)
+                memcpy(buf, new_bounds, sizeof(AABB));
         }
         // by now, we've already moved the element into buf and modified its AABB
         // so just try to insert, but don't add it as a leaf node because it might
         // not fit into here
-        return quadtree_insert_children(q, el, el_size);
+        // return true if not unsubdividing because impossible to unsubdivide when
+        // children have children
+        bool ret = new_bounds ? quadtree_insert_children(q, el, el_size) : true;
+        // prune if few children
+        // it's *probably* OK to prune after reinserting.
+        size_t len = q->data_len;
+        bool children_have_children = false;
+        // if children have children, they must be over threshold
+        // otherwise it'd be caught by recursive call already
+        for (int i = 0; i < 4; i++) {
+            if (q->child[i]->child[0]) {
+                children_have_children = true;
+                break;
+            }
+            len += q->child[i]->data_len;
+        }
+        if (len < QUADTREE_THRESHOLD && !children_have_children) {
+            quadtree_unsubdivide(q, el_size);
+            // we no longer have children, so caller should
+            // check if it should also unsubdivide
+            return false;
+        }
+        return ret;
     }
 }
 
 // NOTE: *guaranteed* that this is equivalent to removing then inserting again
-// NOTE: *el will be modified; new_bounds will be copied to the start of el
+// NOTE: moved element will be modified; new_bounds will be copied to the start
 void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds) {
     // temporary buffer for moved object
     void *buf = malloc(el_size);
@@ -187,4 +256,22 @@ void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AAB
         quadtree_insert_leaf(q, el, el_size);
     }
     free(buf);
+}
+
+void quadtree_remove(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, void *buf) {
+    quadtree_move_impl(q, el, el_size, equal, NULL, buf);
+}
+
+void quadtree_traverse(Quadtree *q, AABB *box, size_t el_size, qt_callback_fn callback, void *cb_data) {
+    if (!q) return;
+    // first, our elements
+    for (size_t i = 0; i < q->data_len; i++) {
+        void *d = q->data + i * el_size;
+        AABB *dbox = (AABB *)d;
+        if (aabb_intersect(box, dbox))
+            callback(cb_data, d);
+    }
+    // check children
+    for (int i = 0; i < 4; i++)
+        quadtree_traverse(q->child[i], box, el_size, callback, cb_data);
 }

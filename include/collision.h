@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 // collision detection structures and functions
+// TODO: make sure it actually works
 
 // AABBs (Axis-Aligned Bounding Box)
 
@@ -77,7 +78,6 @@ float aabb_sweep(const AABB *box,
                  AABBEdge *edge);
 
 // Quadtrees
-// TODO: pruning (unsubdivide when possible) and actually checking collision candidates
 
 enum quadtree_index_t {
     NORTHWEST = 0,
@@ -104,12 +104,23 @@ const unsigned int QUADTREE_THRESHOLD = 16;
 
 typedef struct quadtree_t Quadtree;
 typedef bool (*qt_equal_fn)(void *a, void *b);
+typedef void (*qt_callback_fn)(void *data, void *a);
 
 void quadtree_init(Quadtree *q, const AABB *box, size_t depth);
 // Frees quadtree and children.
 void quadtree_delete(Quadtree *q);
 // Insert into a quadtree. Do not insert elements of different sizes.
 void quadtree_insert(Quadtree *q, void *el, size_t el_size);
-
+// Move object inside quadtree. Compares data using given comparator.
+// equal is a function pointer that returns something nonzero if
+// the two parameters are equal.
+// Moved object will have new_bounds as initial element of struct.
+void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds);
+// Remove object from quadtree. Copies to buf if non-NULL.
+void quadtree_remove(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, void *buf);
+// Traverse quadtree, calling callback for each intersection.
+// cb_data will be provided as first argument to callback.
+// The element data is provided as second argument.
+void quadtree_traverse(Quadtree *q, AABB *box, size_t el_size, qt_callback_fn callback, void *cb_data);
 
 #endif
