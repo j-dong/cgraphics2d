@@ -36,6 +36,7 @@ static void randomize(Box *boxes) {
 
 static bool box_equal(void *a, void *b) {
     Box *aa = (Box *)a, *bb = (Box *)b;
+    printf("comparing %d and %d\n", aa->idx, bb->idx);
     return aa->idx == bb->idx;
 }
 
