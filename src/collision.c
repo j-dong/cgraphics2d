@@ -214,7 +214,7 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
         if (q->data_cap / 2 >= q->data_len) {
             q->data_cap /= 2;
             if (q->data_cap)
-                q->data = realloc(q->data, q->data_cap);
+                q->data = realloc(q->data, q->data_cap * el_size);
             else
                 q->data = NULL;
         }
