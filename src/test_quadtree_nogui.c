@@ -6,7 +6,7 @@
 
 #define WIDTH 1024
 #define HEIGHT 1024
-#define NUM_BOXES 21
+#define NUM_BOXES 65536
 
 struct box_t {
     AABB aabb;
@@ -36,13 +36,12 @@ static void randomize(Box *boxes) {
 
 static bool box_equal(void *a, void *b) {
     Box *aa = (Box *)a, *bb = (Box *)b;
-    printf("comparing %d and %d\n", aa->idx, bb->idx);
     return aa->idx == bb->idx;
 }
 
 static void print_idx(void *_, void *a) {
-    Box *aa = (Box *)a;
-    printf("%05d\n", aa->idx);
+    // do nothing
+    _, a;
 }
 
 int main() {

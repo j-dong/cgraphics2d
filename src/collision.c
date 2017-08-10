@@ -122,7 +122,7 @@ static void quadtree_subdivide(Quadtree *q, size_t el_size) {
 
 static void quadtree_insert_leaf(Quadtree *q, void *el, size_t el_size) {
     quadtree_insert_trivial(q, el, el_size);
-    if (quadtree_should_subdivide(q))
+    if (!q->child[0] && quadtree_should_subdivide(q))
         quadtree_subdivide(q, el_size);
 }
 
