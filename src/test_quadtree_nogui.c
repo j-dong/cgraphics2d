@@ -6,7 +6,7 @@
 
 #define WIDTH 1024
 #define HEIGHT 1024
-#define NUM_BOXES 8
+#define NUM_BOXES 21
 
 struct box_t {
     AABB aabb;
@@ -70,7 +70,7 @@ int main() {
     for (int i = 0; i < NUM_BOXES; i++)
         quadtree_remove(&q, &boxes[i], sizeof(Box), box_equal, NULL);
     end = clock();
-    fprintf(stderr, "inserting %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
+    fprintf(stderr, "removing %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
     // end time remove
     quadtree_delete(&q);
     return 0;
