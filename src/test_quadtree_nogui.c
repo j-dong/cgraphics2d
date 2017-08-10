@@ -9,6 +9,9 @@
 #ifndef NUM_BOXES
 #define NUM_BOXES 65536
 #endif
+#ifndef RAND_SEED
+#define RAND_SEED 0
+#endif
 
 #ifdef NDEBUG
 #error "NDEBUG is defined"
@@ -89,7 +92,7 @@ static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
 }
 
 int main() {
-    srand(0);
+    srand(RAND_SEED);
     AABB bounds;
     aabb_init(&bounds, 0, 0, WIDTH, HEIGHT);
     Quadtree q, q_new;
