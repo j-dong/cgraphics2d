@@ -119,6 +119,18 @@ static void quadtree_subdivide(Quadtree *q, size_t el_size) {
         if (quadtree_should_subdivide(c))
             quadtree_subdivide(c, el_size);
     }
+    // shrink data if necessary
+    if (q->data_cap / 2 >= q->data_len) {
+        q->data_cap /= 2;
+        while (q->data_cap / 2 >= q->data_len)
+            q->data_cap /= 2;
+        if (q->data_cap == 0) {
+            free(q->data);
+            q->data = NULL;
+        } else {
+            q->data = realloc(q->data, q->data_cap * el_size);
+        }
+    }
 }
 
 static void quadtree_insert_leaf(Quadtree *q, void *el, size_t el_size) {
@@ -195,6 +207,16 @@ static void quadtree_move_impl_trivial(Quadtree *q, void *el, size_t el_size, qt
     }
     if (!found) assert(!"element was not found in quadtree");
     memmove(q->data + i * el_size, q->data + (i + 1) * el_size, (q->data_len - i) * el_size);
+    // check if we can reduce capacity
+    if (q->data_cap / 2 >= q->data_len) {
+        q->data_cap /= 2;
+        if (q->data_cap) {
+            q->data = realloc(q->data, q->data_cap * el_size);
+        } else {
+            free(q->data);
+            q->data = NULL;
+        }
+    }
 }
 
 // returns true if element was inserted into its new position
@@ -211,16 +233,6 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
             memcpy(buf, new_bounds, sizeof(AABB));
         // since we don't have any children, we can't recurse
         // no children, so can't unsubdivide
-        // check if we can reduce capacity
-        if (q->data_cap / 2 >= q->data_len) {
-            q->data_cap /= 2;
-            if (q->data_cap) {
-                q->data = realloc(q->data, q->data_cap * el_size);
-            } else {
-                free(q->data);
-                q->data = NULL;
-            }
-        }
         return false;
     } else {
         bool found = false;
