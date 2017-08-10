@@ -194,9 +194,7 @@ static void quadtree_move_impl_trivial(Quadtree *q, void *el, size_t el_size, qt
         }
     }
     if (!found) assert(!"element was not found in quadtree");
-    for (; i < q->data_len; i++) {
-        memcpy(q->data + i * el_size, q->data + (i + 1) * el_size, el_size);
-    }
+    memmove(q->data + i * el_size, q->data + (i + 1) * el_size, (q->data_len - i) * el_size);
 }
 
 // returns true if element was inserted into its new position
