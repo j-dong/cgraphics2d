@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <assert.h>
@@ -11,6 +12,9 @@
 #endif
 #ifndef RAND_SEED
 #define RAND_SEED 0
+#endif
+#ifndef SHIFT_AMOUNT
+#define SHIFT_AMOUNT 64
 #endif
 
 #ifdef NDEBUG
@@ -40,6 +44,18 @@ static void randomize(Box *boxes) {
             y2 = temp;
         }
         aabb_init(&boxes[i].aabb, x1, y1, x2, y2);
+    }
+}
+
+static void shift_random(Box *boxes) {
+    srand(rand());
+    for (int i = 0; i < NUM_BOXES; i++) {
+        int sx = rand() % (SHIFT_AMOUNT * 2) - SHIFT_AMOUNT,
+            sy = rand() % (SHIFT_AMOUNT * 2) - SHIFT_AMOUNT;
+        boxes[i].aabb.x1 += sx;
+        boxes[i].aabb.x2 += sx;
+        boxes[i].aabb.y1 += sy;
+        boxes[i].aabb.y2 += sy;
     }
 }
 
@@ -104,7 +120,8 @@ int main() {
         new_pos[i].idx = i;
     }
     randomize(boxes);
-    randomize(new_pos);
+    memcpy(new_pos, boxes, sizeof boxes);
+    shift_random(new_pos);
     clock_t start, end;
     // begin time insert
     start = clock();
@@ -142,7 +159,7 @@ int main() {
     // begin time remove
     start = clock();
     Box temp;
-    for (int i = 0; i < NUM_BOXES; i++) {
+    for (size_t i = 0; i < NUM_BOXES; i++) {
         quadtree_remove(&q, &boxes[i], sizeof(Box), box_equal, &temp);
         assert(temp.idx == boxes[i].idx && boxes[i].idx == i);
         assert(aabb_equal(&temp.aabb, &boxes[i].aabb));
