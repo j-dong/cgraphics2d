@@ -135,8 +135,9 @@ int main() {
     // move everything around and make sure it's the same structure as inserting
     // begin time move
     start = clock();
+    Box buf;
     for (int i = 0; i < NUM_BOXES; i++) {
-        quadtree_move(&q, &boxes[i], sizeof(Box), box_equal, &new_pos[i].aabb);
+        quadtree_move(&q, &boxes[i], sizeof(Box), box_equal, &new_pos[i].aabb, &buf);
         // below works
         // quadtree_remove(&q, &boxes[i], sizeof(Box), box_equal, NULL);
         // boxes[i].aabb = new_pos[i].aabb;

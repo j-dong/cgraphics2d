@@ -281,14 +281,11 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
 
 // NOTE: *guaranteed* that this is equivalent to removing then inserting again
 // NOTE: moved element will be modified; new_bounds will be copied to the start
-void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds) {
-    // temporary buffer for moved object
-    void *buf = malloc(el_size);
+void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds, void *buf) {
     if (!quadtree_move_impl(q, el, el_size, equal, new_bounds, buf)) {
         // insert into root
         quadtree_insert_leaf(q, buf, el_size);
     }
-    free(buf);
 }
 
 void quadtree_remove(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, void *buf) {
