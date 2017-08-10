@@ -1,6 +1,9 @@
 #ifndef INCLUDED_GRAPHICS_GRAPHICS_H
 #define INCLUDED_GRAPHICS_GRAPHICS_H
 
+// graphics functions
+// TODO: image coordinates in pixels
+
 // don't include windows.h
 // define APIENTRY to prevent glad.h from including it
 #ifdef _WIN32

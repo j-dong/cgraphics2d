@@ -42,10 +42,10 @@ inline void aabb_init(AABB *ret, int x1, int y1, int x2, int y2) {
 }
 
 inline bool aabb_intersect(const AABB *a, const AABB *b) {
-    return !(b->x1 > a->x2
-          || b->x2 < a->x1
-          || b->y1 > a->y2
-          || b->y2 < a->y1);
+    return !(b->x1 >= a->x2
+          || b->x2 <= a->x1
+          || b->y1 >= a->y2
+          || b->y2 <= a->y1);
 }
 
 // if a contains b (edges touching are OK)
@@ -56,14 +56,8 @@ inline bool aabb_contains(const AABB *a, const AABB *b) {
         && b->y2 <= a->y2;
 }
 
-// Expand AABB by given amounts.
 // Finds the bounding AABB for a swept AABB.
-inline void aabb_expand(AABB *a, int dx, int dy) {
-    if (dx < 0) a->x1 += dx;
-    else        a->x2 += dx;
-    if (dy < 0) a->y1 += dy;
-    else        a->y2 += dy;
-}
+void aabb_init_bounding(AABB *a, float x, float y, float dx, float dy, int width, int height);
 
 // Sweep an AABB to another.
 // Subtracts rectangle (width, height) -> ray-AABB intersection
@@ -99,8 +93,6 @@ struct quadtree_t {
     // elements should be POD (no destructor and memcpy-able)
     // element type should be a struct where AABB is the first member
 };
-
-const unsigned int QUADTREE_THRESHOLD = 16;
 
 typedef struct quadtree_t Quadtree;
 typedef bool (*qt_equal_fn)(void *a, void *b);

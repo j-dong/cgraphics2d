@@ -6,7 +6,7 @@
 
 // aabb functions
 
-float sweep_aabb(const AABB *box,
+float aabb_sweep(const AABB *box,
                  float x, float y, float idx, float idy,
                  int width, int height,
                  AABBEdge *edge) {
@@ -33,15 +33,29 @@ float sweep_aabb(const AABB *box,
     }
 }
 
+void aabb_init_bounding(AABB *a, float x, float y, float dx, float dy, int width, int height) {
+    float x1 = x, x2 = x + width;
+    float y1 = y, y2 = y + height;
+    if (dx < 0) x1 += dx;
+    else        x2 += dx;
+    if (dy < 0) y1 += dy;
+    else        y2 += dy;
+    a->x1 = (int)floor(x1);
+    a->x2 = (int)ceil(x2);
+    a->y1 = (int)floor(y1);
+    a->y2 = (int)ceil(y2);
+}
+
 #ifndef __cplusplus
 // inline aabb functions
 void aabb_init(AABB *ret, int x1, int y1, int x2, int y2);
 bool aabb_intersect(const AABB *a, const AABB *b);
 bool aabb_contains(const AABB *a, const AABB *b);
-void aabb_expand(AABB *a, int dx, int dy);
 #endif
 
 // quadtree functions
+
+static const unsigned int QUADTREE_THRESHOLD = 16;
 
 void quadtree_init(Quadtree *q, const AABB *box, size_t depth) {
     int x[] = {box->x1, (box->x1 + box->x2) / 2, box->x2};
