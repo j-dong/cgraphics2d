@@ -6,7 +6,9 @@
 
 #define WIDTH 1024
 #define HEIGHT 1024
+#ifndef NUM_BOXES
 #define NUM_BOXES 65536
+#endif
 
 struct box_t {
     AABB aabb;

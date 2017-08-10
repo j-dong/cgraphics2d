@@ -99,6 +99,7 @@ static void quadtree_insert_trivial(Quadtree *q, void *el, size_t el_size) {
 
 static void quadtree_subdivide(Quadtree *q, size_t el_size) {
     for (int i = 0; i < 4; i++) {
+        assert(!q->child[i] && "subdividing when already subdivided");
         Quadtree *c = q->child[i] = malloc(sizeof(Quadtree));
         quadtree_init(c, &q->box[i], q->max_depth - 1);
         size_t in = 0, end = q->data_len, out = 0;
@@ -161,10 +162,12 @@ static void quadtree_unsubdivide(Quadtree *q, size_t el_size) {
         q->data_cap *= 2;
     }
     // possibility that we just reduced data_cap to 0
-    if (q->data_cap)
+    if (q->data_cap) {
         q->data = realloc(q->data, q->data_cap * el_size);
-    else
+    } else {
+        free(q->data);
         q->data = NULL;
+    }
     // copy elements from children and delete
     for (int i = 0; i < 4; i++) {
         if (q->child[i]->data_len) {
@@ -213,10 +216,12 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
         // check if we can reduce capacity
         if (q->data_cap / 2 >= q->data_len) {
             q->data_cap /= 2;
-            if (q->data_cap)
+            if (q->data_cap) {
                 q->data = realloc(q->data, q->data_cap * el_size);
-            else
+            } else {
+                free(q->data);
                 q->data = NULL;
+            }
         }
         return false;
     } else {
