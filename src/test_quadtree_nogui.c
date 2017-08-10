@@ -10,6 +10,10 @@
 #define NUM_BOXES 65536
 #endif
 
+#ifdef NDEBUG
+#error "NDEBUG is defined"
+#endif
+
 struct box_t {
     AABB aabb;
     unsigned int idx;
@@ -53,12 +57,44 @@ static bool aabb_equal(AABB *a, AABB *b) {
         && a->y2 == b->y2;
 }
 
+static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
+    if (a == NULL && b == NULL)
+        return;
+    if (a == b)
+        assert(!"checking equivalence of equal pointers");
+    for (int i = 0; i < 4; i++)
+        assert(aabb_equal(&a->box[i], &b->box[i]));
+    assert(a->max_depth == b->max_depth);
+    assert(a->data_len == b->data_len);
+    // technically shouldn't be checked, but
+    // I want to ensure that we're not wasting memory
+    assert(a->data_cap == b->data_cap);
+    // make sure they contain the same elements
+    static Box *temp[NUM_BOXES] = {0};
+    Box *a_data = (Box *)a->data,
+        *b_data = (Box *)b->data;
+    for (size_t i = 0; i < a->data_len; i++) {
+        temp[a_data[i].idx] = (Box *)&a_data[i];
+    }
+    for (size_t i = 0; i < b->data_len; i++) {
+        assert(temp[b_data[i].idx] != NULL);
+        assert(aabb_equal(&temp[b_data[i].idx]->aabb, &b_data[i].aabb));
+        temp[b_data[i].idx] = NULL;
+    }
+    for (size_t i = 0; i < NUM_BOXES; i++)
+        assert(temp[i] == NULL);
+    // check children
+    for (int i = 0; i < 4; i++)
+        quadtree_assert_equiv(a->child[i], b->child[i]);
+}
+
 int main() {
     srand(0);
     AABB bounds;
     aabb_init(&bounds, 0, 0, WIDTH, HEIGHT);
-    Quadtree q;
+    Quadtree q, q_new;
     quadtree_init(&q, &bounds, 8);
+    quadtree_init(&q_new, &bounds, 8);
     Box boxes[NUM_BOXES], new_pos[NUM_BOXES];
     for (int i = 0; i < NUM_BOXES; i++) {
         boxes[i].idx = i;
@@ -92,6 +128,14 @@ int main() {
     // update box positions
     for (int i = 0; i < NUM_BOXES; i++)
         boxes[i].aabb = new_pos[i].aabb;
+    // begin time insert
+    start = clock();
+    for (int i = 0; i < NUM_BOXES; i++)
+        quadtree_insert(&q_new, &boxes[i], sizeof(Box));
+    end = clock();
+    fprintf(stderr, "inserting %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
+    // end time insert
+    quadtree_assert_equiv(&q, &q_new);
     // begin time remove
     start = clock();
     Box temp;
@@ -107,5 +151,6 @@ int main() {
     assert(q.data_len == 0 && "root has children after removing children");
     // end time remove
     quadtree_delete(&q);
+    quadtree_delete(&q_new);
     return 0;
 }
