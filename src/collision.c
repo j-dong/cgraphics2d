@@ -243,7 +243,7 @@ static bool quadtree_move_impl(Quadtree *q, void *el, size_t el_size, qt_equal_f
         // not fit into here
         // return true if not unsubdividing because impossible to unsubdivide when
         // children have children
-        bool ret = new_bounds ? quadtree_insert_children(q, el, el_size) : true;
+        bool ret = new_bounds ? quadtree_insert_children(q, buf, el_size) : true;
         // prune if few children
         // it's *probably* OK to prune after reinserting.
         size_t len = q->data_len;
@@ -274,7 +274,7 @@ void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AAB
     void *buf = malloc(el_size);
     if (!quadtree_move_impl(q, el, el_size, equal, new_bounds, buf)) {
         // insert into root
-        quadtree_insert_leaf(q, el, el_size);
+        quadtree_insert_leaf(q, buf, el_size);
     }
     free(buf);
 }
