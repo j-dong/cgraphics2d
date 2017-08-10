@@ -96,7 +96,7 @@ int main(void) {
         graphics_draw(window, ind_data, 1, 16, 16, 0, 0, 0.25f, 0.25f);
         // sweep test
         AABBEdge edge;
-        float sweep = aabb_sweep(&a, b.x1, b.y1, 1.0f / move[0], 1.0f / move[1], player_width, player_height, &edge);
+        double sweep = aabb_sweep(&a, b.x1, b.y1, 1.0 / move[0], 1.0 / move[1], player_width, player_height, &edge);
         if (sweep >= 0) {
             col_data[0] = b.x1 + (int)(move[0] * sweep);
             col_data[1] = b.y1 + (int)(move[1] * sweep);

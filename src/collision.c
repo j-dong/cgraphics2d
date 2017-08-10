@@ -6,20 +6,20 @@
 
 // aabb functions
 
-float aabb_sweep(const AABB *box,
-                 float x, float y, float idx, float idy,
-                 int width, int height,
-                 AABBEdge *edge) {
+double aabb_sweep(const AABB *box,
+                  double x, double y, double idx, double idy,
+                  int width, int height,
+                  AABBEdge *edge) {
     // slab method for ray-aabb intersection
-    float tx1 = (box->x1 - x - width) * idx;
-    float tx2 = (box->x2 - x) * idx;
+    double tx1 = (box->x1 - x - width) * idx;
+    double tx2 = (box->x2 - x) * idx;
     bool xis1 = tx1 < tx2;
-    float tmin = fminf(tx1, tx2);
-    float tmax = fmaxf(tx1, tx2);
-    float ty1 = (box->y1 - y - height) * idy;
-    float ty2 = (box->y2 - y) * idy;
+    double tmin = fminf(tx1, tx2);
+    double tmax = fmaxf(tx1, tx2);
+    double ty1 = (box->y1 - y - height) * idy;
+    double ty2 = (box->y2 - y) * idy;
     bool yis1 = ty1 < ty2;
-    float ntmin = fminf(ty1, ty2);
+    double ntmin = fminf(ty1, ty2);
     bool isy = ntmin >= tmin;
     tmin = fmaxf(tmin, ntmin);
     tmax = fminf(tmax, fmaxf(ty1, ty2));
@@ -33,9 +33,9 @@ float aabb_sweep(const AABB *box,
     }
 }
 
-void aabb_init_bounding(AABB *a, float x, float y, float dx, float dy, int width, int height) {
-    float x1 = x, x2 = x + width;
-    float y1 = y, y2 = y + height;
+void aabb_init_bounding(AABB *a, double x, double y, double dx, double dy, int width, int height) {
+    double x1 = x, x2 = x + width;
+    double y1 = y, y2 = y + height;
     if (dx < 0) x1 += dx;
     else        x2 += dx;
     if (dy < 0) y1 += dy;

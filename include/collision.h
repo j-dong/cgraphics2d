@@ -57,7 +57,7 @@ inline bool aabb_contains(const AABB *a, const AABB *b) {
 }
 
 // Finds the bounding AABB for a swept AABB.
-void aabb_init_bounding(AABB *a, float x, float y, float dx, float dy, int width, int height);
+void aabb_init_bounding(AABB *a, double x, double y, double dx, double dy, int width, int height);
 
 // Sweep an AABB to another.
 // Subtracts rectangle (width, height) -> ray-AABB intersection
@@ -66,10 +66,10 @@ void aabb_init_bounding(AABB *a, float x, float y, float dx, float dy, int width
 // sets edge to the edge intersected
 // idx and idy are 1.0 / displacement
 // returns -1.0 if no collision
-float aabb_sweep(const AABB *box,
-                 float x, float y, float idx, float idy,
-                 int width, int height,
-                 AABBEdge *edge);
+double aabb_sweep(const AABB *box,
+                  double x, double y, double idx, double idy,
+                  int width, int height,
+                  AABBEdge *edge);
 
 // Quadtrees
 
