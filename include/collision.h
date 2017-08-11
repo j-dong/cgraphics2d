@@ -88,11 +88,13 @@ struct quadtree_t {
     size_t max_depth;
     size_t data_len;
     size_t data_cap;
+    size_t data_free;
     size_t el_size;
     void *data; // data_len * arbitrary-sized elements
     // element size is given as parameter to methods
     // elements should be POD (no destructor and memcpy-able)
     // element type should be a struct where AABB is the first member
+    // freed elements are represented by a zeroed-out AABB
 };
 
 typedef struct quadtree_t Quadtree;

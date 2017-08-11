@@ -59,9 +59,12 @@ static const unsigned int QUADTREE_THRESHOLD = 16;
 
 // quadtree data functions
 
+static const char FREE_AABB[sizeof(AABB)];
+
 static inline void quadtree_data_init(Quadtree *q) {
     q->data_len = 0;
     q->data_cap = 0;
+    q->data_free = 0;
     q->data = NULL;
 }
 
@@ -69,10 +72,28 @@ static inline void quadtree_data_delete(Quadtree *q) {
     free(q->data);
 }
 
+static void quadtree_data_remove_free(Quadtree *q) {
+    if (q->data_free) {
+        // similar to split_into_child
+        size_t in = 0, end = q->data_len + q->data_free, out = 0;
+        while (in < end) {
+            if (memcmp((char *)q->data + in * q->el_size, FREE_AABB, sizeof(AABB)) != 0) {
+                if (in != out)
+                    memcpy((char *)q->data + out * q->el_size, (char *)q->data + in * q->el_size, q->el_size);
+                out++;
+            }
+        }
+        q->data_free = 0;
+    }
+}
+
 static void quadtree_data_insert(Quadtree *q, void *el) {
     if (q->data_cap == 0) {
         q->data_cap = 1;
         q->data = malloc(q->data_cap * q->el_size);
+    }
+    if (q->data_len + q->data_free >= q->data_cap) {
+        quadtree_data_remove_free(q);
     }
     if (q->data_len == q->data_cap) {
         q->data_cap *= 2;
@@ -85,9 +106,12 @@ static void quadtree_data_insert(Quadtree *q, void *el) {
 // move elements from us to children satisfying predicate
 // i is index of child
 static void quadtree_data_split_into_child(Quadtree *q, int i) {
-    size_t in = 0, end = q->data_len, out = 0;
+    size_t in = 0, end = q->data_len + q->data_free, out = 0;
+    // remove freed elements while we're at it
     while (in < end) {
-        if (aabb_contains(&q->box[i], (AABB *)((char *)q->data + in * q->el_size))) {
+        if (memcmp((char *)q->data + in * q->el_size, FREE_AABB, sizeof(AABB)) == 0) {
+            // do nothing
+        } if (aabb_contains(&q->box[i], (AABB *)((char *)q->data + in * q->el_size))) {
             quadtree_data_insert(q->child[i], (char *)q->data + in * q->el_size);
         } else {
             if (in != out) {
@@ -98,10 +122,12 @@ static void quadtree_data_split_into_child(Quadtree *q, int i) {
         in++;
     }
     q->data_len = out;
+    q->data_free = 0;
 }
 
 static void quadtree_data_cleanup_after_split(Quadtree *q) {
     // shrink data if necessary
+    assert(q->data_free == 0);
     if (q->data_cap / 2 >= q->data_len) {
         q->data_cap /= 2;
         while (q->data_cap / 2 >= q->data_len)
@@ -126,6 +152,7 @@ static void quadtree_data_reserve(Quadtree *q, size_t new_len) {
     }
     // possibility that we just reduced data_cap to 0
     if (q->data_cap) {
+        quadtree_data_remove_free(q);
         q->data = realloc(q->data, q->data_cap * q->el_size);
     } else {
         free(q->data);
@@ -134,29 +161,43 @@ static void quadtree_data_reserve(Quadtree *q, size_t new_len) {
 }
 
 static inline void quadtree_data_unsplit_from_child(Quadtree *q, int i) {
+    assert(q->data_free == 0);
     memcpy((char *)q->data + q->data_len * q->el_size, q->child[i]->data, q->child[i]->data_len * q->el_size);
     q->data_len += q->child[i]->data_len;
+}
+
+static void quadtree_data_traverse(Quadtree *q, AABB *box, qt_callback_fn callback, void *cb_data) {
+    for (size_t i = 0; i < q->data_len; i++) {
+        void *d = (void *)((char *)q->data + i * q->el_size);
+        AABB *dbox = (AABB *)d;
+        if (aabb_intersect(box, dbox))
+            callback(cb_data, d);
+    }
 }
 
 // remove el from data and copy into buf, if given
 static void quadtree_data_remove(Quadtree *q, void *el, qt_equal_fn equal, void *buf) {
     size_t i = 0;
     bool found = false;
-    for (; i < q->data_len; i++) {
+    for (; i < q->data_len + q->data_free; i++) {
         if (equal(el, (char *)q->data + i * q->el_size)) {
             if (buf)
                 memcpy(buf, (char *)q->data + i * q->el_size, q->el_size);
+            // mark as free
+            memcpy((char *)q->data + i * q->el_size, FREE_AABB, sizeof(AABB));
             q->data_len--;
+            q->data_free++;
             found = true;
             break;
         }
     }
     if (!found) assert(!"element was not found in quadtree");
-    memmove((char *)q->data + i * q->el_size, (char *)q->data + (i + 1) * q->el_size, (q->data_len - i) * q->el_size);
+    // memmove((char *)q->data + i * q->el_size, (char *)q->data + (i + 1) * q->el_size, (q->data_len - i) * q->el_size);
     // check if we can reduce capacity
     if (q->data_cap / 2 >= q->data_len) {
         q->data_cap /= 2;
         if (q->data_cap) {
+            quadtree_data_remove_free(q);
             q->data = realloc(q->data, q->data_cap * q->el_size);
         } else {
             free(q->data);
@@ -324,14 +365,10 @@ void quadtree_remove(Quadtree *q, void *el, qt_equal_fn equal, void *buf) {
 
 void quadtree_traverse(Quadtree *q, AABB *box, qt_callback_fn callback, void *cb_data) {
     if (!q) return;
-    // first, our elements
-    for (size_t i = 0; i < q->data_len; i++) {
-        void *d = (void *)((char *)q->data + i * q->el_size);
-        AABB *dbox = (AABB *)d;
-        if (aabb_intersect(box, dbox))
-            callback(cb_data, d);
-    }
+    quadtree_data_traverse(q, box, callback, cb_data);
     // check children
-    for (int i = 0; i < 4; i++)
-        quadtree_traverse(q->child[i], box, callback, cb_data);
+    for (int i = 0; i < 4; i++) {
+        if (aabb_intersect(box, &q->box[i]))
+            quadtree_traverse(q->child[i], box, callback, cb_data);
+    }
 }
