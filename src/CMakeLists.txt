@@ -1,6 +1,11 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -Wall -Wextra")
+if(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_CLAGS} /Wall")
+elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+endif()
 
+set(CMAKE_C_STANDARD 11)
 add_executable(graphics main.c graphics.c collision.c)
 add_executable(test_aabb test_aabb.c graphics.c collision.c)
 add_executable(test_quadtree_nogui test_quadtree_nogui.c collision.c)
