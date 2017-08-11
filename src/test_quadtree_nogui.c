@@ -18,7 +18,9 @@
 #endif
 
 #ifdef NDEBUG
-#error "NDEBUG is defined"
+#define TEST_ASSERT(x) do { if (!(x)) { fprintf(stderr, "Assertion failed: (%s:%d) %s\n", __FILE__, __LINE__, #x); abort(); } } while (false)
+#else
+#define TEST_ASSERT assert
 #endif
 
 struct box_t {
@@ -90,14 +92,14 @@ static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
     if (a == NULL && b == NULL)
         return;
     if (a == b)
-        assert(!"checking equivalence of equal pointers");
+        TEST_ASSERT(!"checking equivalence of equal pointers");
     for (int i = 0; i < 4; i++)
-        assert(aabb_equal(&a->box[i], &b->box[i]));
-    assert(a->max_depth == b->max_depth);
-    assert(a->data_len == b->data_len);
+        TEST_ASSERT(aabb_equal(&a->box[i], &b->box[i]));
+    TEST_ASSERT(a->max_depth == b->max_depth);
+    TEST_ASSERT(a->data_len == b->data_len);
     // technically shouldn't be checked, but
     // I want to ensure that we're not wasting memory
-    assert(a->data_cap == b->data_cap);
+    TEST_ASSERT(a->data_cap == b->data_cap);
     // make sure they contain the same elements
     static Box *temp[NUM_BOXES] = {0};
     for (size_t i = 0; i < NUM_BOXES; i++)
@@ -107,18 +109,18 @@ static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
     for (size_t i = 0; i < a->data_len + a->data_free; i++) {
         if (memcmp(&a_data[i].aabb, FREE_AABB, sizeof(AABB)) == 0)
             continue;
-        assert(temp[a_data[i].idx] == NULL && "duplicate");
+        TEST_ASSERT(temp[a_data[i].idx] == NULL && "duplicate");
         temp[a_data[i].idx] = (Box *)&a_data[i];
     }
     for (size_t i = 0; i < b->data_len + b->data_free; i++) {
         if (memcmp(&b_data[i].aabb, FREE_AABB, sizeof(AABB)) == 0)
             continue;
-        assert(temp[b_data[i].idx] != NULL);
-        assert(aabb_equal(&temp[b_data[i].idx]->aabb, &b_data[i].aabb));
+        TEST_ASSERT(temp[b_data[i].idx] != NULL);
+        TEST_ASSERT(aabb_equal(&temp[b_data[i].idx]->aabb, &b_data[i].aabb));
         temp[b_data[i].idx] = NULL;
     }
     for (size_t i = 0; i < NUM_BOXES; i++)
-        assert(temp[i] == NULL);
+        TEST_ASSERT(temp[i] == NULL);
     // check children
     for (int i = 0; i < 4; i++)
         quadtree_assert_equiv(a->child[i], b->child[i]);
@@ -180,14 +182,14 @@ int main() {
     Box temp;
     for (size_t i = 0; i < NUM_BOXES; i++) {
         quadtree_remove(&q, &boxes[i], box_equal, &temp);
-        assert(temp.idx == boxes[i].idx && boxes[i].idx == i);
-        assert(aabb_equal(&temp.aabb, &boxes[i].aabb));
-        assert(aabb_equal(&temp.aabb, &new_pos[i].aabb));
+        TEST_ASSERT(temp.idx == boxes[i].idx && boxes[i].idx == i);
+        TEST_ASSERT(aabb_equal(&temp.aabb, &boxes[i].aabb));
+        TEST_ASSERT(aabb_equal(&temp.aabb, &new_pos[i].aabb));
     }
     end = clock();
     fprintf(stderr, "removing %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
-    assert(!q.child[0] && "root is subdivided after removing all children");
-    assert(q.data_len == 0 && "root has children after removing children");
+    TEST_ASSERT(!q.child[0] && "root is subdivided after removing all children");
+    TEST_ASSERT(q.data_len == 0 && "root has children after removing children");
     // end time remove
     quadtree_delete(&q);
     quadtree_delete(&q_new);
