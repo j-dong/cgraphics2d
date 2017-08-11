@@ -107,8 +107,9 @@ void quadtree_insert(Quadtree *q, void *el, size_t el_size);
 // Move object inside quadtree. Compares data using given comparator.
 // equal is a function pointer that returns something nonzero if
 // the two parameters are equal.
+// buf is a buffer of size el_size. It will contain the moved element.
 // Moved object will have new_bounds as initial element of struct.
-void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds);
+void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds, void *buf);
 // Remove object from quadtree. Copies to buf if non-NULL.
 void quadtree_remove(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, void *buf);
 // Traverse quadtree, calling callback for each intersection.
