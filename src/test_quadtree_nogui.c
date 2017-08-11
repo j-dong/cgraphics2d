@@ -66,7 +66,8 @@ static bool box_equal(void *a, void *b) {
 
 static void print_idx(void *_, void *a) {
     // do nothing
-    _, a;
+    (void)_;
+    (void)a;
 }
 
 static bool aabb_equal(AABB *a, AABB *b) {

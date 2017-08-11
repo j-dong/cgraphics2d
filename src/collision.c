@@ -14,15 +14,15 @@ double aabb_sweep(const AABB *box,
     double tx1 = (box->x1 - x - width) * idx;
     double tx2 = (box->x2 - x) * idx;
     bool xis1 = tx1 < tx2;
-    double tmin = fminf(tx1, tx2);
-    double tmax = fmaxf(tx1, tx2);
+    double tmin = fmin(tx1, tx2);
+    double tmax = fmax(tx1, tx2);
     double ty1 = (box->y1 - y - height) * idy;
     double ty2 = (box->y2 - y) * idy;
     bool yis1 = ty1 < ty2;
-    double ntmin = fminf(ty1, ty2);
+    double ntmin = fmin(ty1, ty2);
     bool isy = ntmin >= tmin;
-    tmin = fmaxf(tmin, ntmin);
-    tmax = fminf(tmax, fmaxf(ty1, ty2));
+    tmin = fmax(tmin, ntmin);
+    tmax = fmin(tmax, fmax(ty1, ty2));
     if (tmin < tmax && tmin >= 0.0f && tmin < 1.0f) {
         if (edge)
             *edge = isy ? yis1 ? EDGE_NORTH : EDGE_SOUTH
