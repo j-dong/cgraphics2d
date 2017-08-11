@@ -74,12 +74,6 @@ static void print_idx(void *_, void *a) {
     (void)a;
 }
 
-static void incr_idx(void *seta, void *aa) {
-    Box *a = (Box *)aa;
-    int *set = (int *)seta;
-    set[a->idx]++;
-}
-
 static bool aabb_equal(AABB *a, AABB *b) {
     return a->x1 == b->x1
         && a->y1 == b->y1
