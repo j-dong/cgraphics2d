@@ -56,7 +56,7 @@ static void highlight(void *box_data_, void *box_) {
 int main(void) {
     srand(RAND_SEED);
     AABB bounds;
-    aabb_init(&bounds, -WIDTH / 2, -HEIGHT / 2, WIDTH / 2, HEIGHT / 2);
+    aabb_init(&bounds, -(int)WIDTH / 2, -(int)HEIGHT / 2, WIDTH / 2, HEIGHT / 2);
     Quadtree q;
     quadtree_init(&q, &bounds, 7, sizeof(Box));
     // objects
@@ -68,7 +68,7 @@ int main(void) {
     }
     randomize(boxes);
     // 4 int/floats per map value
-    GLint player_data[4], *box_data = malloc(NUM_BOXES * 4);
+    GLint player_data[4], *box_data = malloc(NUM_BOXES * 4 * sizeof(GLint));
     // x, y, tx, ty
     ((GLfloat *)player_data)[2] = 0.00f;
     ((GLfloat *)player_data)[3] = 0.00f;
