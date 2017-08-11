@@ -142,7 +142,7 @@ static void quadtree_data_cleanup_after_split(Quadtree *q) {
     assert(q->data_free == 0);
     if (q->data_cap / 2 >= q->data_len) {
         q->data_cap /= 2;
-        while (q->data_cap / 2 >= q->data_len)
+        while (q->data_cap && q->data_cap / 2 >= q->data_len)
             q->data_cap /= 2;
         if (q->data_cap == 0) {
             free(q->data);
@@ -249,6 +249,7 @@ static inline bool quadtree_should_subdivide(Quadtree *q) {
 }
 
 static void quadtree_subdivide(Quadtree *q) {
+    assert(q->max_depth > 0);
     for (int i = 0; i < 4; i++) {
         assert(!q->child[i] && "subdividing when already subdivided");
         Quadtree *c = q->child[i] = malloc(sizeof(Quadtree));
