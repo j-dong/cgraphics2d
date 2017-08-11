@@ -4,13 +4,13 @@
 const unsigned int WIDTH = 512, HEIGHT = 512;
 
 #ifndef NUM_BOXES
-#define NUM_BOXES 8192
+#define NUM_BOXES 2048
 #endif
 #ifndef RAND_SEED
 #define RAND_SEED 42
 #endif
 #ifndef BOX_SIZE
-#define BOX_SIZE 16
+#define BOX_SIZE 8
 #endif
 
 struct box_t {
@@ -71,11 +71,10 @@ int main(void) {
     GLint player_data[4], *box_data = malloc(NUM_BOXES * 4 * sizeof(GLint));
     // x, y, tx, ty
     ((GLfloat *)player_data)[2] = 0.00f;
-    ((GLfloat *)player_data)[3] = 0.00f;
+    ((GLfloat *)player_data)[3] = 0.25f;
     for (size_t i = 0; i < NUM_BOXES; i++) {
         box_data[i * 4    ] = boxes[i].aabb.x1;
         box_data[i * 4 + 1] = boxes[i].aabb.y1;
-        printf("inserting %d at (%d, %d)\n", (int)i, boxes[i].aabb.x1, boxes[i].aabb.y1);
         fflush(stdout);
         quadtree_insert(&q, &boxes[i]);
     }
@@ -103,13 +102,16 @@ int main(void) {
         graphics_poll_events();
         graphics_clear();
         // update data
-        player_data[0] = player.x1;
-        player_data[1] = player.y1;
-        graphics_draw(window, player_data, 1, player.x2 - player.x1, player.y2 - player.y1, 0, 0, 0.25f, 0.25f);
         for (size_t i = 0; i < NUM_BOXES; i++) {
             box_data[i * 4 + 2] = 0.75f;
             box_data[i * 4 + 3] = 0.50f;
         }
+        // highlight colliding boxes
+        quadtree_traverse(&q, &player, highlight, box_data);
+        // draw boxes and player
+        player_data[0] = player.x1;
+        player_data[1] = player.y1;
+        graphics_draw(window, player_data, 1, player.x2 - player.x1, player.y2 - player.y1, 0, 0, 0.25f, 0.25f);
         graphics_draw(window, box_data, NUM_BOXES, BOX_SIZE, BOX_SIZE, 0, 0, 0.25f, 0.25f);
         // player movement
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
