@@ -114,13 +114,14 @@ int main() {
     Quadtree q, q_new;
     quadtree_init(&q, &bounds, 8);
     quadtree_init(&q_new, &bounds, 8);
-    Box boxes[NUM_BOXES], new_pos[NUM_BOXES];
+    Box *boxes = malloc(sizeof(Box) * NUM_BOXES),
+        *new_pos = malloc(sizeof(Box) * NUM_BOXES);
     for (int i = 0; i < NUM_BOXES; i++) {
         boxes[i].idx = i;
         new_pos[i].idx = i;
     }
     randomize(boxes);
-    memcpy(new_pos, boxes, sizeof boxes);
+    memcpy(new_pos, boxes, NUM_BOXES * sizeof(Box));
     shift_random(new_pos);
     clock_t start, end;
     // begin time insert
@@ -172,5 +173,7 @@ int main() {
     // end time remove
     quadtree_delete(&q);
     quadtree_delete(&q_new);
+    free(boxes);
+    free(new_pos);
     return 0;
 }
