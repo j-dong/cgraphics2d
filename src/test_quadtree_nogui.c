@@ -8,10 +8,10 @@
 #define WIDTH 1024
 #define HEIGHT 1024
 #ifndef NUM_BOXES
-#define NUM_BOXES 65536
+#define NUM_BOXES 64
 #endif
 #ifndef RAND_SEED
-#define RAND_SEED 0
+#define RAND_SEED 42
 #endif
 #ifndef SHIFT_AMOUNT
 #define SHIFT_AMOUNT 64
@@ -33,6 +33,8 @@ static void randomize(Box *boxes) {
     for (int i = 0; i < NUM_BOXES; i++) {
         int x1 = rand() % WIDTH, x2 = rand() % WIDTH,
             y1 = rand() % HEIGHT, y2 = rand() % HEIGHT;
+        if (x1 == x2) x2++;
+        if (y1 == y2) y2++;
         if (x1 > x2) {
             int temp = x1;
             x1 = x2;
@@ -70,6 +72,12 @@ static void print_idx(void *_, void *a) {
     (void)a;
 }
 
+static void incr_idx(void *seta, void *aa) {
+    Box *a = (Box *)aa;
+    int *set = (int *)seta;
+    set[a->idx]++;
+}
+
 static bool aabb_equal(AABB *a, AABB *b) {
     return a->x1 == b->x1
         && a->y1 == b->y1
@@ -78,6 +86,7 @@ static bool aabb_equal(AABB *a, AABB *b) {
 }
 
 static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
+    static const char FREE_AABB[sizeof(AABB)] = {0};
     if (a == NULL && b == NULL)
         return;
     if (a == b)
@@ -91,12 +100,19 @@ static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
     assert(a->data_cap == b->data_cap);
     // make sure they contain the same elements
     static Box *temp[NUM_BOXES] = {0};
+    for (size_t i = 0; i < NUM_BOXES; i++)
+        temp[i] = NULL;
     Box *a_data = (Box *)a->data,
         *b_data = (Box *)b->data;
-    for (size_t i = 0; i < a->data_len; i++) {
+    for (size_t i = 0; i < a->data_len + a->data_free; i++) {
+        if (memcmp(&a_data[i].aabb, FREE_AABB, sizeof(AABB)) == 0)
+            continue;
+        assert(temp[a_data[i].idx] == NULL && "duplicate");
         temp[a_data[i].idx] = (Box *)&a_data[i];
     }
-    for (size_t i = 0; i < b->data_len; i++) {
+    for (size_t i = 0; i < b->data_len + a->data_free; i++) {
+        if (memcmp(&b_data[i].aabb, FREE_AABB, sizeof(AABB)) == 0)
+            continue;
         assert(temp[b_data[i].idx] != NULL);
         assert(aabb_equal(&temp[b_data[i].idx]->aabb, &b_data[i].aabb));
         temp[b_data[i].idx] = NULL;
