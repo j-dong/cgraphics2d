@@ -113,8 +113,8 @@ int main() {
     AABB bounds;
     aabb_init(&bounds, 0, 0, WIDTH, HEIGHT);
     Quadtree q, q_new;
-    quadtree_init(&q, &bounds, 8);
-    quadtree_init(&q_new, &bounds, 8);
+    quadtree_init(&q, &bounds, 8, sizeof(Box));
+    quadtree_init(&q_new, &bounds, 8, sizeof(Box));
     Box *boxes = malloc(sizeof(Box) * NUM_BOXES),
         *new_pos = malloc(sizeof(Box) * NUM_BOXES);
     for (int i = 0; i < NUM_BOXES; i++) {
@@ -128,22 +128,22 @@ int main() {
     // begin time insert
     start = clock();
     for (int i = 0; i < NUM_BOXES; i++)
-        quadtree_insert(&q, &boxes[i], sizeof(Box));
+        quadtree_insert(&q, &boxes[i]);
     end = clock();
     fprintf(stderr, "inserting %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
     // end time insert
     // make sure everything's in there
-    quadtree_traverse(&q, &bounds, sizeof(Box), print_idx, NULL);
+    quadtree_traverse(&q, &bounds, print_idx, NULL);
     // move everything around and make sure it's the same structure as inserting
     // begin time move
     start = clock();
     Box buf;
     for (int i = 0; i < NUM_BOXES; i++) {
-        quadtree_move(&q, &boxes[i], sizeof(Box), box_equal, &new_pos[i].aabb, &buf);
+        quadtree_move(&q, &boxes[i], box_equal, &new_pos[i].aabb, &buf);
         // below works
-        // quadtree_remove(&q, &boxes[i], sizeof(Box), box_equal, NULL);
+        // quadtree_remove(&q, &boxes[i], box_equal, NULL);
         // boxes[i].aabb = new_pos[i].aabb;
-        // quadtree_insert(&q, &boxes[i], sizeof(Box));
+        // quadtree_insert(&q, &boxes[i]);
     }
     end = clock();
     fprintf(stderr, "moving %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
@@ -154,7 +154,7 @@ int main() {
     // begin time insert
     start = clock();
     for (int i = 0; i < NUM_BOXES; i++)
-        quadtree_insert(&q_new, &boxes[i], sizeof(Box));
+        quadtree_insert(&q_new, &boxes[i]);
     end = clock();
     fprintf(stderr, "inserting %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
     // end time insert
@@ -163,7 +163,7 @@ int main() {
     start = clock();
     Box temp;
     for (size_t i = 0; i < NUM_BOXES; i++) {
-        quadtree_remove(&q, &boxes[i], sizeof(Box), box_equal, &temp);
+        quadtree_remove(&q, &boxes[i], box_equal, &temp);
         assert(temp.idx == boxes[i].idx && boxes[i].idx == i);
         assert(aabb_equal(&temp.aabb, &boxes[i].aabb));
         assert(aabb_equal(&temp.aabb, &new_pos[i].aabb));

@@ -88,6 +88,7 @@ struct quadtree_t {
     size_t max_depth;
     size_t data_len;
     size_t data_cap;
+    size_t el_size;
     void *data; // data_len * arbitrary-sized elements
     // element size is given as parameter to methods
     // elements should be POD (no destructor and memcpy-able)
@@ -98,23 +99,23 @@ typedef struct quadtree_t Quadtree;
 typedef bool (*qt_equal_fn)(void *a, void *b);
 typedef void (*qt_callback_fn)(void *data, void *a);
 
-void quadtree_init(Quadtree *q, const AABB *box, size_t depth);
+void quadtree_init(Quadtree *q, const AABB *box, size_t depth, size_t el_size);
 // Frees quadtree and children.
 // Does not free parameter.
 void quadtree_delete(Quadtree *q);
 // Insert into a quadtree. Do not insert elements of different sizes.
-void quadtree_insert(Quadtree *q, void *el, size_t el_size);
+void quadtree_insert(Quadtree *q, void *el);
 // Move object inside quadtree. Compares data using given comparator.
 // equal is a function pointer that returns something nonzero if
 // the two parameters are equal.
 // buf is a buffer of size el_size. It will contain the moved element.
 // Moved object will have new_bounds as initial element of struct.
-void quadtree_move(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, AABB *new_bounds, void *buf);
+void quadtree_move(Quadtree *q, void *el, qt_equal_fn equal, AABB *new_bounds, void *buf);
 // Remove object from quadtree. Copies to buf if non-NULL.
-void quadtree_remove(Quadtree *q, void *el, size_t el_size, qt_equal_fn equal, void *buf);
+void quadtree_remove(Quadtree *q, void *el, qt_equal_fn equal, void *buf);
 // Traverse quadtree, calling callback for each intersection.
 // cb_data will be provided as first argument to callback.
 // The element data is provided as second argument.
-void quadtree_traverse(Quadtree *q, AABB *box, size_t el_size, qt_callback_fn callback, void *cb_data);
+void quadtree_traverse(Quadtree *q, AABB *box, qt_callback_fn callback, void *cb_data);
 
 #endif
