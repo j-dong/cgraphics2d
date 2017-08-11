@@ -8,7 +8,7 @@
 #define WIDTH 1024
 #define HEIGHT 1024
 #ifndef NUM_BOXES
-#define NUM_BOXES 64
+#define NUM_BOXES 65536
 #endif
 #ifndef RAND_SEED
 #define RAND_SEED 42
@@ -110,7 +110,7 @@ static void quadtree_assert_equiv(Quadtree *a, Quadtree *b) {
         assert(temp[a_data[i].idx] == NULL && "duplicate");
         temp[a_data[i].idx] = (Box *)&a_data[i];
     }
-    for (size_t i = 0; i < b->data_len + a->data_free; i++) {
+    for (size_t i = 0; i < b->data_len + b->data_free; i++) {
         if (memcmp(&b_data[i].aabb, FREE_AABB, sizeof(AABB)) == 0)
             continue;
         assert(temp[b_data[i].idx] != NULL);
