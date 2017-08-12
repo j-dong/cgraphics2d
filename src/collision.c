@@ -80,8 +80,7 @@ static void quadtree_data_remove_free(Quadtree *q) {
         while (in < end) {
             if (memcmp((char *)q->data + in * q->el_size, FREE_AABB, sizeof(AABB)) == 0) {
                 block_len = in - block_start;
-                if (block_start != out)
-                    memmove((char *)q->data + out * q->el_size, (char *)q->data + block_start * q->el_size, block_len * q->el_size);
+                memmove((char *)q->data + out * q->el_size, (char *)q->data + block_start * q->el_size, block_len * q->el_size);
                 out += block_len;
                 block_start = in + 1;
 #ifndef NDEBUG
@@ -92,8 +91,7 @@ static void quadtree_data_remove_free(Quadtree *q) {
         }
         // move last block
         block_len = end - block_start;
-        if (block_start != out)
-            memmove((char *)q->data + out * q->el_size, (char *)q->data + block_start * q->el_size, block_len * q->el_size);
+        memmove((char *)q->data + out * q->el_size, (char *)q->data + block_start * q->el_size, block_len * q->el_size);
         assert(q->data_free == 0);
         q->data_free = 0;
     }
