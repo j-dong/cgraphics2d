@@ -238,13 +238,13 @@ GraphicsError graphics_load_textures(const TextureOptions *tex_opts, size_t tex_
         }
         // premultiply if needed
         if (!tex_opts[i].premultiplied) {
-            size_t i = 4 * (width * height - 1);
-            for (;; i -= 4) {
-                unsigned short alpha = (unsigned short)data[i + 3] + 1;
-                data[i + 0] = (unsigned char)((alpha * data[i + 0]) / 256);
-                data[i + 1] = (unsigned char)((alpha * data[i + 1]) / 256);
-                data[i + 2] = (unsigned char)((alpha * data[i + 2]) / 256);
-                if (i == 0) break;
+            size_t j = 4 * (width * height - 1);
+            for (;; j -= 4) {
+                unsigned short alpha = (unsigned short)data[j + 3] + 1;
+                data[j + 0] = (unsigned char)((alpha * data[j + 0]) / 256);
+                data[j + 1] = (unsigned char)((alpha * data[j + 1]) / 256);
+                data[j + 2] = (unsigned char)((alpha * data[j + 2]) / 256);
+                if (j == 0) break;
             }
         }
         glTexImage2D(GL_TEXTURE_2D, 0, tex_opts[i].srgb ? GL_SRGB_ALPHA : GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
