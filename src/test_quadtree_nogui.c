@@ -171,6 +171,19 @@ int main() {
     fprintf(stderr, "inserting %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
     // end time insert
     quadtree_assert_equiv(&q, &q_new);
+    // begin time delete
+    start = clock();
+    quadtree_delete(&q_new);
+    end = clock();
+    fprintf(stderr, "deleting with %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
+    // end time delete
+    // begin time clone
+    start = clock();
+    quadtree_clone(&q_new, &q);
+    end = clock();
+    fprintf(stderr, "cloning with %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
+    // end time clone
+    quadtree_assert_equiv(&q, &q_new);
     // begin time remove
     start = clock();
     Box temp;

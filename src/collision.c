@@ -75,9 +75,9 @@ static inline void quadtree_data_delete(Quadtree *q) {
 static void quadtree_data_remove_free(Quadtree *q) {
     if (q->data_free) {
         // similar to split_into_child
-        size_t in = 0, end = q->data_len + q->data_free, out = 0,
+        size_t end = q->data_len + q->data_free, out = 0,
                block_start = 0, block_len;
-        while (in < end) {
+        for (size_t in = 0; in < end; in++) {
             if (memcmp((char *)q->data + in * q->el_size, FREE_AABB, sizeof(AABB)) == 0) {
                 block_len = in - block_start;
                 memmove((char *)q->data + out * q->el_size, (char *)q->data + block_start * q->el_size, block_len * q->el_size);
@@ -87,7 +87,6 @@ static void quadtree_data_remove_free(Quadtree *q) {
                 q->data_free--;
 #endif
             }
-            in++;
         }
         // move last block
         block_len = end - block_start;
@@ -118,9 +117,9 @@ static void quadtree_data_insert(Quadtree *q, void *el) {
 // move elements from us to children satisfying predicate
 // i is index of child
 static void quadtree_data_split_into_child(Quadtree *q, int i) {
-    size_t in = 0, end = q->data_len + q->data_free, out = 0;
+    size_t end = q->data_len + q->data_free, out = 0;
     // remove freed elements while we're at it
-    while (in < end) {
+    for (size_t in = 0; in < end; in++) {
         void *inptr = (void *)((char *)q->data + in * q->el_size);
         if (memcmp(inptr, FREE_AABB, sizeof(AABB)) == 0) {
             // do nothing
@@ -135,7 +134,6 @@ static void quadtree_data_split_into_child(Quadtree *q, int i) {
             }
             out++;
         }
-        in++;
     }
     q->data_len = out;
     assert(q->data_free == 0);
@@ -223,6 +221,32 @@ static void quadtree_data_remove(Quadtree *q, void *el, qt_equal_fn equal, void 
             q->data = NULL;
             q->data_free = 0;
         }
+    }
+}
+
+static void quadtree_data_clone(Quadtree *dest, const Quadtree *src) {
+    dest->data_cap = src->data_cap;
+    dest->data_len = src->data_len;
+    dest->data = malloc(src->data_cap * src->el_size);
+    // remove free while we're at it
+    dest->data_free = 0;
+    if (src->data_free) {
+        // similar to quadtree_data_remove_free
+        size_t end = src->data_len + src->data_free, out = 0,
+               block_start = 0, block_len;
+        for (size_t in = 0; in < end; in++) {
+            if (memcmp((char *)src->data + in * src->el_size, FREE_AABB, sizeof(AABB)) == 0) {
+                block_len = in - block_start;
+                memcpy((char *)dest->data + out * dest->el_size, (char *)src->data + block_start * src->el_size, block_len * src->el_size);
+                out += block_len;
+                block_start = in + 1;
+            }
+        }
+        // move last block
+        block_len = end - block_start;
+        memcpy((char *)dest->data + out * dest->el_size, (char *)src->data + block_start * src->el_size, block_len * src->el_size);
+    } else {
+        memcpy(dest->data, src->data, src->data_len * src->el_size);
     }
 }
 
@@ -392,5 +416,23 @@ void quadtree_traverse(Quadtree *q, AABB *box, qt_callback_fn callback, void *cb
     for (int i = 0; i < 4; i++) {
         if (aabb_intersect(box, &q->box[i]))
             quadtree_traverse(q->child[i], box, callback, cb_data);
+    }
+}
+
+void quadtree_clone(Quadtree *dest, const Quadtree *src) {
+    assert(dest != NULL && src != NULL);
+    for (int i = 0; i < 4; i++)
+        dest->box[i] = src->box[i];
+    dest->max_depth = src->max_depth;
+    dest->el_size = src->el_size;
+    quadtree_data_clone(dest, src);
+    if (src->child[0] != NULL) {
+        for (int i = 0; i < 4; i++) {
+            dest->child[i] = malloc(sizeof(Quadtree));
+            quadtree_clone(dest->child[i], src->child[i]);
+        }
+    } else {
+        for (int i = 0; i < 4; i++)
+            dest->child[i] = NULL;
     }
 }

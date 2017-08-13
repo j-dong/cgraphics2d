@@ -119,5 +119,7 @@ void quadtree_remove(Quadtree *q, void *el, qt_equal_fn equal, void *buf);
 // cb_data will be provided as first argument to callback.
 // The element data is provided as second argument.
 void quadtree_traverse(Quadtree *q, AABB *box, qt_callback_fn callback, void *cb_data);
+// Clone quadtree.
+void quadtree_clone(Quadtree *dest, const Quadtree *src);
 
 #endif
