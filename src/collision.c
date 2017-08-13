@@ -227,9 +227,13 @@ static void quadtree_data_remove(Quadtree *q, void *el, qt_equal_fn equal, void 
 static void quadtree_data_clone(Quadtree *dest, const Quadtree *src) {
     dest->data_cap = src->data_cap;
     dest->data_len = src->data_len;
+    dest->data_free = 0;
+    if (!src->data) {
+        dest->data = NULL;
+        return;
+    }
     dest->data = malloc(src->data_cap * src->el_size);
     // remove free while we're at it
-    dest->data_free = 0;
     if (src->data_free) {
         // similar to quadtree_data_remove_free
         size_t end = src->data_len + src->data_free, out = 0,
