@@ -1,6 +1,21 @@
 #include "hashtable.h"
+#include <stdlib.h>
 
 // hash table implementation
+
+#define HASHTABLE_INITIAL_CAPACITY 8
+#define HASHTABLE_LOAD_FACTOR_PERCENT 80
+
+void hashtable_init(Hashtable *h) {
+    h->data_len = 0;
+    h->data_cap = HASHTABLE_INITIAL_CAPACITY;
+    h->resize_cap = h->data_cap * HASHTABLE_LOAD_FACTOR_PERCENT / 100;
+    h->mask = h->data_cap - 1;
+    h->data = malloc(h->data_cap * sizeof *h->data);
+}
+
+void hashtable_free(Hashtable *h) {
+}
 
 // hash function
 

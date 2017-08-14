@@ -152,6 +152,7 @@ int main(void) {
     // cleanup
     graphics_destroy_window(window);
     graphics_terminate();
+    quadtree_free(&q);
     free(box_data);
     free(boxes);
     return EXIT_SUCCESS;

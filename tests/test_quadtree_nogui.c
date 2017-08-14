@@ -173,7 +173,7 @@ int main() {
     quadtree_assert_equiv(&q, &q_new);
     // begin time delete
     start = clock();
-    quadtree_delete(&q_new);
+    quadtree_free(&q_new);
     end = clock();
     fprintf(stderr, "deleting with %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
     // end time delete
@@ -198,10 +198,10 @@ int main() {
     TEST_ASSERT(!q.child[0] && "root is subdivided after removing all children");
     TEST_ASSERT(q.data_len == 0 && "root has children after removing children");
     // end time remove
-    quadtree_delete(&q);
+    quadtree_free(&q);
     // begin time delete
     start = clock();
-    quadtree_delete(&q_new);
+    quadtree_free(&q_new);
     end = clock();
     fprintf(stderr, "deleting with %d elements took %.3f ms.\n", NUM_BOXES, (end - start) * 1000.0 / CLOCKS_PER_SEC);
     // end time delete

@@ -104,7 +104,7 @@ typedef void (*qt_callback_fn)(void *data, void *a);
 void quadtree_init(Quadtree *q, const AABB *box, size_t depth, size_t el_size);
 // Frees quadtree and children.
 // Does not free parameter.
-void quadtree_delete(Quadtree *q);
+void quadtree_free(Quadtree *q);
 // Insert into a quadtree. Do not insert elements of different sizes.
 void quadtree_insert(Quadtree *q, void *el);
 // Move object inside quadtree. Compares data using given comparator.

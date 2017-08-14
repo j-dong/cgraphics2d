@@ -9,8 +9,6 @@
 // see https://www.sebastiansylvan.com/post/robin-hood-hashing-should-be-your-default-hash-table-implementation/
 // and http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/
 
-#define HASHTABLE_KEY char *
-
 // if key is NULL then empty
 struct hashtable_t {
     // capacity is always a power of 2
@@ -22,7 +20,7 @@ struct hashtable_t {
     // so we can do a bitwise AND
     uint64_t mask;
     struct hashtable_entry_t {
-        HASHTABLE_KEY key;
+        char *key;
         void *value;
         uint64_t hash;
     } *data;
@@ -31,9 +29,9 @@ struct hashtable_t {
 typedef struct hashtable_t Hashtable;
 
 void hashtable_init(Hashtable *h);
-void hashtable_delete(Hashtable *h);
-void hashtable_insert(Hashtable *h, HASHTABLE_KEY key, void *value);
-void *hashtable_get(Hashtable *h, HASHTABLE_KEY key);
-void hashtable_remove(Hashtable *h, HASHTABLE_KEY key);
+void hashtable_free(Hashtable *h);
+void hashtable_insert(Hashtable *h, char *key, void *value);
+void *hashtable_get(Hashtable *h, char *key);
+void hashtable_remove(Hashtable *h, char *key);
 
 #endif

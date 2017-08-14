@@ -268,11 +268,11 @@ void quadtree_init(Quadtree *q, const AABB *box, size_t depth, size_t el_size) {
     quadtree_data_init(q);
 }
 
-void quadtree_delete(Quadtree *q) {
+void quadtree_free(Quadtree *q) {
     if (q == NULL) return;
     quadtree_data_delete(q);
     for (int i = 0; i < 4; i++) {
-        quadtree_delete(q->child[i]);
+        quadtree_free(q->child[i]);
         free(q->child[i]);
     }
 }
@@ -334,7 +334,7 @@ static void quadtree_unsubdivide(Quadtree *q) {
         if (q->child[i]->data_len) {
             quadtree_data_unsplit_from_child(q, i);
         }
-        quadtree_delete(q->child[i]);
+        quadtree_free(q->child[i]);
         free(q->child[i]);
         q->child[i] = NULL;
     }
