@@ -13,7 +13,7 @@
 #define DO_INTENSIVE_BENCHMARK 1
 #endif
 
-#define NUM_STRINGS 16
+#define NUM_STRINGS 65536
 
 const char *some_strings[] = {
     "hello",
@@ -92,7 +92,7 @@ int main() {
         strings[i][0] = ((i      ) & 0x000F) + 'a';
         strings[i][1] = ((i >>  4) & 0x000F) + 'a';
         strings[i][2] = ((i >>  8) & 0x000F) + 'a';
-        strings[i][3] = ((i >> 16) & 0x000F) + 'a';
+        strings[i][3] = ((i >> 12) & 0x000F) + 'a';
         strings[i][4] = 0;
     }
     clock_t start, end;
@@ -101,7 +101,6 @@ int main() {
     printf("=== inserting %d elements ===\n", NUM_STRINGS);
     start = clock();
     for (size_t i = 0; i < NUM_STRINGS; i++) {
-        printf("inserting %s\n", strings[i]);
         hashtable_put(h, strings[i], some_strings[i % 16]);
         values[i] = some_strings[i % 16];
     }
