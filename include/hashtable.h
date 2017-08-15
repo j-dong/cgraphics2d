@@ -28,10 +28,46 @@ struct hashtable_t {
 
 typedef struct hashtable_t Hashtable;
 
+// Initialize a hashtable.
+// Initial capacity is specified in hashtable.c
 void hashtable_init(Hashtable *h);
+// Free a hashtable.
+// Does not free elements.
 void hashtable_free(Hashtable *h);
-void hashtable_insert(Hashtable *h, char *key, void *value);
+// Returns pointer to value, so you can choose what to set it to
+// based on the previous value. Value will be set to NULL if
+// newly inserted.
+// Copies key.
+void **hashtable_ready_put(Hashtable *h, char *key);
+// Returns old value if occupied (does overwrite).
+// Returns NULL if not occupied.
+// Copies key.
+inline void *hashtable_put(Hashtable *h, char *key, void *value) {
+    void **value_ptr = hashtable_ready_put(h, key);
+    void *ret = *value_ptr;
+    *value_ptr = value;
+    return ret;
+}
+// Returns NULL if not there.
 void *hashtable_get(Hashtable *h, char *key);
 void hashtable_remove(Hashtable *h, char *key);
+
+inline void hashtable_traverse(Hashtable *h, void (*callback)(char *key, void *value)) {
+    for (size_t i = 0; i < h->data_cap; i++)
+        if (h->data[i].key)
+            callback(h->data[i].key, h->data[i].value);
+}
+
+inline void hashtable_traverse_data(Hashtable *h, void *data, void (*callback)(void *data, char *key, void *value)) {
+    for (size_t i = 0; i < h->data_cap; i++)
+        if (h->data[i].key)
+            callback(data, h->data[i].key, h->data[i].value);
+}
+
+inline void hashtable_traverse_values(Hashtable *h, void (*callback)(void *value)) {
+    for (size_t i = 0; i < h->data_cap; i++)
+        if (h->data[i].key)
+            callback(h->data[i].value);
+}
 
 #endif
