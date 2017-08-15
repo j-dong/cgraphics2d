@@ -33,12 +33,7 @@ inline static size_t hashtable_dib(Hashtable *h, size_t pos, uint64_t hash) {
     return (pos - hash) & h->mask;
 }
 
-inline static void **hashtable_ready_put_impl(Hashtable *h, char *key, size_t len, uint64_t hash, bool copy_key, bool check_duplicate) {
-    if (copy_key) {
-        char *old_key = key;
-        key = malloc(len + 1);
-        memcpy(key, old_key, len + 1);
-    }
+inline static void **hashtable_ready_put_impl(Hashtable *h, char *key, uint64_t hash, bool copy_key, bool check_duplicate) {
     size_t pos = hash & h->mask;
     size_t dib = 0;
     void **ret = NULL;
@@ -47,8 +42,10 @@ inline static void **hashtable_ready_put_impl(Hashtable *h, char *key, size_t le
         if (check_duplicate
          && h->data[pos].hash == hash
          && strcmp(h->data[pos].key, key) == 0) {
-            if (copy_key)
-                free(key);
+            if (copy_key) {
+                // will have been copied
+                free((void *)key);
+            }
             return &h->data[pos].value;
         }
         size_t cur_dib = hashtable_dib(h, pos, h->data[pos].hash);
@@ -93,7 +90,7 @@ static void hashtable_resize(Hashtable *h) {
             // we know that there are no duplicates, and we can
             // safely pass the key without copying
             *hashtable_ready_put_impl(h,
-                old_data[i].key, strlen(old_data[i].key), old_data[i].hash,
+                old_data[i].key, old_data[i].hash,
                 false, false) = old_data[i].value;
         }
     }
@@ -101,17 +98,19 @@ static void hashtable_resize(Hashtable *h) {
     assert(h->data_len == old_len);
 }
 
-void **hashtable_ready_put(Hashtable *h, char *key) {
+void **hashtable_ready_put(Hashtable *h, const char *key) {
     if (h->data_len >= h->resize_cap)
         hashtable_resize(h);
     size_t len = strlen(key);
     uint64_t hash = str_hash(key, len);
-    return hashtable_ready_put_impl(h, key, len, hash, true, true);
+    char *new_key = malloc(len + 1);
+    memcpy(new_key, key, len + 1);
+    return hashtable_ready_put_impl(h, new_key, hash, true, true);
 }
 
-void *hashtable_put(Hashtable *h, char *key, void *value);
+void *hashtable_put(Hashtable *h, const char *key, void *value);
 
-void *hashtable_get(Hashtable *h, char *key) {
+void *hashtable_get(Hashtable *h, const char *key) {
     size_t dib = 0;
     size_t len = strlen(key);
     uint64_t hash = str_hash(key, len);
@@ -131,7 +130,7 @@ void *hashtable_get(Hashtable *h, char *key) {
     return NULL;
 }
 
-void *hashtable_remove(Hashtable *h, char *key) {
+void *hashtable_remove(Hashtable *h, const char *key) {
     // search for element
     size_t dib = 0;
     size_t len = strlen(key);
@@ -175,8 +174,8 @@ void *hashtable_remove(Hashtable *h, char *key) {
     return ret;
 }
 
-void hashtable_traverse(Hashtable *h, void (*callback)(char *key, void *value));
-void hashtable_traverse_data(Hashtable *h, void *data, void (*callback)(void *data, char *key, void *value));
+void hashtable_traverse(Hashtable *h, void (*callback)(const char *key, void *value));
+void hashtable_traverse_data(Hashtable *h, void *data, void (*callback)(void *data, const char *key, void *value));
 void hashtable_traverse_values(Hashtable *h, void (*callback)(void *value));
 
 // hash function

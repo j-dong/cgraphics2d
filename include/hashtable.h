@@ -38,28 +38,28 @@ void hashtable_free(Hashtable *h);
 // based on the previous value. Value will be set to NULL if
 // newly inserted.
 // Copies key.
-void **hashtable_ready_put(Hashtable *h, char *key);
+void **hashtable_ready_put(Hashtable *h, const char *key);
 // Returns old value if occupied (does overwrite).
 // Returns NULL if not occupied.
 // Copies key.
-inline void *hashtable_put(Hashtable *h, char *key, void *value) {
+inline void *hashtable_put(Hashtable *h, const char *key, void *value) {
     void **value_ptr = hashtable_ready_put(h, key);
     void *ret = *value_ptr;
     *value_ptr = value;
     return ret;
 }
 // Returns NULL if not there.
-void *hashtable_get(Hashtable *h, char *key);
+void *hashtable_get(Hashtable *h, const char *key);
 // Returns element removed, or NULL.
-void *hashtable_remove(Hashtable *h, char *key);
+void *hashtable_remove(Hashtable *h, const char *key);
 
-inline void hashtable_traverse(Hashtable *h, void (*callback)(char *key, void *value)) {
+inline void hashtable_traverse(Hashtable *h, void (*callback)(const char *key, void *value)) {
     for (size_t i = 0; i < h->data_cap; i++)
         if (h->data[i].key)
             callback(h->data[i].key, h->data[i].value);
 }
 
-inline void hashtable_traverse_data(Hashtable *h, void *data, void (*callback)(void *data, char *key, void *value)) {
+inline void hashtable_traverse_data(Hashtable *h, void *data, void (*callback)(void *data, const char *key, void *value)) {
     for (size_t i = 0; i < h->data_cap; i++)
         if (h->data[i].key)
             callback(data, h->data[i].key, h->data[i].value);
