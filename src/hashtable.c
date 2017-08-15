@@ -60,7 +60,6 @@ inline static void **hashtable_ready_put_impl(Hashtable *h, char *key, size_t le
             h->data[pos].key = key;
             h->data[pos].value = value;
             h->data[pos].hash = hash;
-            ret = &h->data[pos].value;
             key = t_key;
             value = t_value;
             hash = t_hash;
