@@ -131,6 +131,49 @@ void *hashtable_get(Hashtable *h, char *key) {
     return NULL;
 }
 
+void *hashtable_remove(Hashtable *h, char *key) {
+    // search for element
+    size_t dib = 0;
+    size_t len = strlen(key);
+    uint64_t hash = str_hash(key, len);
+    size_t pos = hash & h->mask;
+    void *ret;
+    while (true) {
+        if (!h->data[pos].key) {
+            return NULL;
+        }
+        if (h->data[pos].hash == hash
+         && strcmp(h->data[pos].key, key) == 0) {
+            ret = h->data[pos].value;
+            break;
+        }
+        size_t cur_dib = hashtable_dib(h, pos, h->data[pos].hash);
+        if (cur_dib < dib) {
+            return NULL;
+        }
+        dib++;
+        pos = (pos + 1) & h->mask;
+    }
+    // pos holds the index of entry to delete
+    // shift following elements backwards
+    // until empty or 0 DIB
+    size_t next_pos;
+    while (true) {
+        next_pos = (pos + 1) & h->mask;
+        if (!h->data[next_pos].key)
+            break;
+        if (hashtable_dib(h, next_pos, h->data[next_pos].hash) == 0)
+            break;
+        // would like to do a bulk memmove, but it'd be annoying
+        // to deal with wrapping around
+        memcpy(&h->data[pos], &h->data[next_pos], sizeof(struct hashtable_entry_t));
+        pos = next_pos;
+    }
+    h->data[pos].key = NULL;
+    h->data_len--;
+    return ret;
+}
+
 void hashtable_traverse(Hashtable *h, void (*callback)(char *key, void *value));
 void hashtable_traverse_data(Hashtable *h, void *data, void (*callback)(void *data, char *key, void *value));
 void hashtable_traverse_values(Hashtable *h, void (*callback)(void *value));

@@ -50,7 +50,8 @@ inline void *hashtable_put(Hashtable *h, char *key, void *value) {
 }
 // Returns NULL if not there.
 void *hashtable_get(Hashtable *h, char *key);
-void hashtable_remove(Hashtable *h, char *key);
+// Returns element removed, or NULL.
+void *hashtable_remove(Hashtable *h, char *key);
 
 inline void hashtable_traverse(Hashtable *h, void (*callback)(char *key, void *value)) {
     for (size_t i = 0; i < h->data_cap; i++)

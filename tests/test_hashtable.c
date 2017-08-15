@@ -82,6 +82,18 @@ int main() {
     printf("=== printing full hashtable (capacity: %d) ===\n", h->data_cap);
     hashtable_traverse(h, print_key_value);
     printf("\n");
+    printf("=== removing some elements ===\n");
+    for (int i = 0; i < 8; i += 2)
+        hashtable_remove(h, some_strings[i]);
+    printf("=== printing removed hashtable (capacity: %d) ===\n", h->data_cap);
+    hashtable_traverse(h, print_key_value);
+    printf("\n");
+    printf("=== adding elements back ===\n");
+    for (int i = 0; i < 16; i += 2)
+        hashtable_put(h, some_strings[i], some_strings[(i + 3) % 16]);
+    printf("=== printing readded hashtable (capacity: %d) ===\n", h->data_cap);
+    hashtable_traverse(h, print_key_value);
+    printf("\n");
     printf("=== freeing hashtable ===\n");
     hashtable_free(h);
 #if DO_INTENSIVE_BENCHMARK
