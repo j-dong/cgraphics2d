@@ -118,7 +118,6 @@ int main() {
     }
     end = clock();
     printf("    took %.3f ms\n", (end - start) * 1000.0 / CLOCKS_PER_SEC);
-    printf("now %d elements\n", h->data_len);
     TEST_ASSERT(h->data_len == NUM_STRINGS);
     hashtable_traverse(h, verify_values);
     printf("=== overwriting %d elements ===\n", NUM_STRINGS);
@@ -127,6 +126,26 @@ int main() {
         size_t i = (-j + NUM_STRINGS / 1 + NUM_STRINGS) % NUM_STRINGS;
         hashtable_put(h, strings[i], some_strings[j % 16]);
         values[i] = some_strings[j % 16];
+    }
+    end = clock();
+    printf("    took %.3f ms\n", (end - start) * 1000.0 / CLOCKS_PER_SEC);
+    TEST_ASSERT(h->data_len == NUM_STRINGS);
+    hashtable_traverse(h, verify_values);
+    printf("=== removing %d elements ===\n", NUM_STRINGS / 2);
+    start = clock();
+    for (size_t i = 0; i < NUM_STRINGS / 2; i++) {
+        TEST_ASSERT(hashtable_remove(h, strings[i]) == values[i]);
+        values[i] = NULL;
+    }
+    end = clock();
+    printf("    took %.3f ms\n", (end - start) * 1000.0 / CLOCKS_PER_SEC);
+    TEST_ASSERT(h->data_len == NUM_STRINGS / 2);
+    hashtable_traverse(h, verify_values);
+    printf("=== readding %d elements ===\n", NUM_STRINGS);
+    start = clock();
+    for (size_t i = 0; i < NUM_STRINGS; i++) {
+        hashtable_put(h, strings[i], some_strings[i % 16]);
+        values[i] = some_strings[i % 16];
     }
     end = clock();
     printf("    took %.3f ms\n", (end - start) * 1000.0 / CLOCKS_PER_SEC);
