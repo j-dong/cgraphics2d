@@ -144,6 +144,7 @@ void *hashtable_remove(Hashtable *h, char *key) {
         }
         if (h->data[pos].hash == hash
          && strcmp(h->data[pos].key, key) == 0) {
+            free(h->data[pos].key);
             ret = h->data[pos].value;
             break;
         }
