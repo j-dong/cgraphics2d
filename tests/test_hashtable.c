@@ -112,7 +112,7 @@ int main() {
     printf("=== overwriting %d elements ===\n", NUM_STRINGS);
     start = clock();
     for (size_t j = 0; j < NUM_STRINGS; j++) {
-        size_t i = (-i + NUM_STRINGS / 1 + NUM_STRINGS) % NUM_STRINGS;
+        size_t i = (-j + NUM_STRINGS / 1 + NUM_STRINGS) % NUM_STRINGS;
         hashtable_put(h, strings[i], some_strings[j % 16]);
         values[i] = some_strings[j % 16];
     }
