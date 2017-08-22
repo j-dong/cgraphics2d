@@ -101,11 +101,11 @@ int main(void) {
             col_data[0] = b.x1 + (int)(move[0] * sweep);
             col_data[1] = b.y1 + (int)(move[1] * sweep);
             graphics_draw(window, col_data, 1, player_width, player_height, 0, 0, 0.25f, 0.25f);
-            if (edge >> 1) {
+            if (edge & 1) {
                 edge_data[0] = (a.x1 + a.x2) / 2 - 2;
-                edge_data[1] = edge & 1 ? a.y2 - 4 : a.y1;
+                edge_data[1] = edge >> 1 ? a.y2 - 4 : a.y1;
             } else {
-                edge_data[0] = edge & 1 ? a.x2 - 4 : a.x1;
+                edge_data[0] = edge >> 1 ? a.x2 - 4 : a.x1;
                 edge_data[1] = (a.y1 + a.y2) / 2 - 2;
             }
             graphics_draw(window, edge_data, 1, 4, 4, 0, 0, 0.25f, 0.25f);

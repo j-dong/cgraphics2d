@@ -18,17 +18,17 @@ typedef struct aabb_t AABB;
 
 enum aabb_edge_t {
     EDGE_WEST = 0,
-    EDGE_EAST = 1,
-    EDGE_NORTH = 2,
+    EDGE_NORTH = 1,
+    EDGE_EAST = 2,
     EDGE_SOUTH = 3,
 };
 
 // some tricks:
 // let e be an edge.
-// e >> 1 is
+// e & 1 is
 //  0 if x (west or east) and
 //  1 if y (north or south)
-// e & 1 is
+// e >> 1 is
 //  0 if negative edge (west or north) and
 //  1 if positive edge (east or south)
 
