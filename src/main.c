@@ -146,7 +146,7 @@ int main(void) {
                             int coords[4];
                         } *aabb_hack = (void *)&rect;
                         assert(sizeof *aabb_hack == sizeof rect);
-                        new_pos = aabb_hack->coords[edge] - !(edge >> 1) * (edge & 1 ? player_height : player_height);
+                        new_pos = aabb_hack->coords[edge] - !(edge >> 1) * (edge & 1 ? player_height : player_width);
                     }
                 }
             }
