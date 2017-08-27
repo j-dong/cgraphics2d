@@ -26,14 +26,14 @@ static const TextureOptions texture_options[TEX_COUNT] = {
 
 int main(void) {
     // rendered objects
-    const int map_x = 0, map_y = 0;
+    const int map_x = -200, map_y = -150;
     const unsigned int tex_rows = 4, tex_cols = 4;
     const unsigned int tile_width = 64, tile_height = 64;
-    const unsigned int map[4][4] = {
-        {8, 2, 8, 8},
-        {2, 8, 8, 8},
-        {8, 8, 1, 1},
-        {1, 1, 1, 1},
+    const unsigned int map[4][8] = {
+        {8, 8, 8, 8, 8, 8, 2, 8},
+        {2, 2, 8, 8, 1, 8, 8, 8},
+        {8, 8, 8, 1, 3, 4, 5, 6},
+        {1, 1, 1, 1, 2, 1, 1, 2},
     };
     const int map_width = sizeof map[0] / sizeof map[0][0],
               map_height = sizeof map / sizeof map[0];
@@ -122,10 +122,10 @@ int main(void) {
             // collide up to two times
             AABB bounds;
             aabb_init_bounding(&bounds, player_pos[0], player_pos[1], player_delta[0], player_delta[1], player_width, player_height);
-            int start_x = bounds.x1 > 0 ? bounds.x1 / (int)tile_width : 0,
-                start_y = bounds.y1 > 0 ? bounds.y1 / (int)tile_height : 0,
-                end_x = bounds.x2 / (int)tile_width < map_width ? bounds.x2 / (int)tile_width : (map_width - 1),
-                end_y = bounds.y2 / (int)tile_height < map_height ? bounds.y2 / (int)tile_height : (map_height - 1);
+            int start_x = bounds.x1 > map_x ? (bounds.x1 - map_x) / (int)tile_width : 0,
+                start_y = bounds.y1 > map_y ? (bounds.y1 - map_y) / (int)tile_height : 0,
+                end_x = bounds.x2 / (int)tile_width < map_width + map_x ? (bounds.x2 - map_x) / (int)tile_width : (map_width - 1),
+                end_y = bounds.y2 / (int)tile_height < map_height + map_y ? (bounds.y2 - map_y) / (int)tile_height : (map_height - 1);
             double t = 2.0;
             int edge;
             int new_pos;
